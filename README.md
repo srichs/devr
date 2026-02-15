@@ -1,5 +1,8 @@
 # devr
 
+[![CI](https://github.com/srichs/devr/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/srichs/devr/actions/workflows/ci.yml)
+[![PyPI version](https://img.shields.io/pypi/v/devr.svg)](https://pypi.org/project/devr/)
+
 **devr** runs your Python dev preflight (lint, format checks, type checks, tests, and coverage)
 inside your project virtual environment.
 
