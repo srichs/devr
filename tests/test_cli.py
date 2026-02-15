@@ -413,7 +413,9 @@ def test_changed_files_collects_tracked_and_untracked(
         SimpleNamespace(returncode=0, stdout="a.py\na.py\nsub/b.py\n"),
         SimpleNamespace(returncode=0, stdout="new.py\n"),
     ]
-    monkeypatch.setattr("devr.cli.subprocess.run", lambda *args, **kwargs: responses.pop(0))
+    monkeypatch.setattr(
+        "devr.cli.subprocess.run", lambda *args, **kwargs: responses.pop(0)
+    )
 
     from devr.cli import _changed_files
 
