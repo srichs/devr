@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import subprocess
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Optional
 
@@ -11,6 +12,26 @@ from .templates import DEFAULT_TOOLCHAIN, PRECOMMIT_LOCAL_HOOK_YAML
 from .venv import create_venv, find_venv, run_module, venv_python
 
 app = typer.Typer(add_completion=False, help="devr: run dev preflight checks inside your project venv.")
+
+
+def _devr_version() -> str:
+    try:
+        return version("devr")
+    except PackageNotFoundError:
+        return "0.0.0"
+
+
+def _version_callback(value: bool) -> None:
+    if value:
+        typer.echo(f"devr {_devr_version()}")
+        raise typer.Exit()
+
+
+@app.callback()
+def main(
+    version_flag: bool = typer.Option(False, "--version", callback=_version_callback, is_eager=True, help="Show devr version and exit."),
+) -> None:
+    del version_flag
 
 
 def project_root() -> Path:
@@ -131,6 +152,8 @@ def check(
     if venv_dir is None:
         typer.echo("No venv found. Run: devr init")
         raise typer.Exit(code=2)
+
+    typer.echo(f"Using venv: {venv_dir}")
 
     files: list[str] = []
     if changed and staged:
