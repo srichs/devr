@@ -1,6 +1,9 @@
 docs/_build
-src/__pycache__
+src/devr/__pycache__
 tests/__pycache__
 .pytest_cache
 .venv
+.mypy_cache
+.ruff_cache
+.pre-commit*
 dist

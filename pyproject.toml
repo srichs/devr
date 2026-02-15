@@ -37,7 +37,7 @@ Repository = "https://github.com/srichs/devr"
 Issues = "https://github.com/srichs/devr/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["devr"]
+packages = ["src/devr"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
