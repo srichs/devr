@@ -238,8 +238,12 @@ def check(
     # 1) Format / lint
     if cfg.formatter == "ruff":
         if fix:
-            _run_or_exit(venv_dir, "ruff", ["check", "--fix", "."], root)
-            _run_or_exit(venv_dir, "ruff", ["format", "."], root)
+            fix_target = files if changed else ["."]
+            if fix_target:
+                _run_or_exit(venv_dir, "ruff", ["check", "--fix", *fix_target], root)
+                _run_or_exit(venv_dir, "ruff", ["format", *fix_target], root)
+            else:
+                typer.echo("No changed Python files detected; skipping lint/format.")
         else:
             # Lint (optionally scoped)
             lint_target = files if changed else ["."]
