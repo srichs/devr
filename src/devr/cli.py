@@ -1,3 +1,5 @@
+"""Command-line interface for running devr workflows."""
+
 from __future__ import annotations
 
 import subprocess
@@ -11,10 +13,14 @@ from .config import load_config
 from .templates import DEFAULT_TOOLCHAIN, PRECOMMIT_LOCAL_HOOK_YAML
 from .venv import create_venv, find_venv, run_module, venv_python
 
-app = typer.Typer(add_completion=False, help="devr: run dev preflight checks inside your project venv.")
+app = typer.Typer(
+    add_completion=False,
+    help="devr: run dev preflight checks inside your project venv.",
+)
 
 
 def _devr_version() -> str:
+    """Return the installed package version or a local fallback version."""
     try:
         return version("devr")
     except PackageNotFoundError:
@@ -22,6 +28,7 @@ def _devr_version() -> str:
 
 
 def _version_callback(value: bool) -> None:
+    """Print the devr version and exit when ``--version`` is requested."""
     if value:
         typer.echo(f"devr {_devr_version()}")
         raise typer.Exit()
@@ -29,24 +36,36 @@ def _version_callback(value: bool) -> None:
 
 @app.callback()
 def main(
-    version_flag: bool = typer.Option(False, "--version", callback=_version_callback, is_eager=True, help="Show devr version and exit."),
+    version_flag: bool = typer.Option(
+        False,
+        "--version",
+        callback=_version_callback,
+        is_eager=True,
+        help="Show devr version and exit.",
+    ),
 ) -> None:
+    """Define global CLI options shared by all subcommands."""
     del version_flag
 
 
 def project_root() -> Path:
+    """Return the current working directory as the project root."""
     # MVP: assume current working directory is project root
     return Path.cwd()
 
 
 def ensure_toolchain(venv_dir: Path, root: Path) -> None:
+    """Install and/or upgrade required development tools inside ``venv_dir``."""
     # Upgrade pip basics
-    run_module(venv_dir, "pip", ["install", "-U", "pip", "setuptools", "wheel"], cwd=root)
+    run_module(
+        venv_dir, "pip", ["install", "-U", "pip", "setuptools", "wheel"], cwd=root
+    )
     # Install toolchain
     run_module(venv_dir, "pip", ["install", *DEFAULT_TOOLCHAIN], cwd=root)
 
 
 def install_project(venv_dir: Path, root: Path) -> None:
+    """Install project dependencies from ``pyproject.toml`` or ``requirements.txt``."""
     pyproject = root / "pyproject.toml"
     reqs = root / "requirements.txt"
 
@@ -54,7 +73,9 @@ def install_project(venv_dir: Path, root: Path) -> None:
         # Best default: editable install. If it fails, fall back to non-editable.
         code = run_module(venv_dir, "pip", ["install", "-e", "."], cwd=root)
         if code != 0:
-            typer.echo("Editable install failed; trying non-editable install (pip install .)")
+            typer.echo(
+                "Editable install failed; trying non-editable install (pip install .)"
+            )
             run_module(venv_dir, "pip", ["install", "."], cwd=root)
         return
 
@@ -62,10 +83,13 @@ def install_project(venv_dir: Path, root: Path) -> None:
         run_module(venv_dir, "pip", ["install", "-r", "requirements.txt"], cwd=root)
         return
 
-    typer.echo("No pyproject.toml or requirements.txt found; skipping project dependency install.")
+    typer.echo(
+        "No pyproject.toml or requirements.txt found; skipping project dependency install."
+    )
 
 
 def write_precommit(root: Path) -> None:
+    """Create the pre-commit config file when it is not already present."""
     path = root / ".pre-commit-config.yaml"
     if path.exists():
         typer.echo(".pre-commit-config.yaml already exists; leaving it unchanged.")
@@ -75,14 +99,19 @@ def write_precommit(root: Path) -> None:
 
 
 def install_precommit_hook(venv_dir: Path, root: Path) -> None:
+    """Install the local git pre-commit hook via ``pre_commit install``."""
     # Run pre-commit from inside the venv
     run_module(venv_dir, "pre_commit", ["install"], cwd=root)
 
 
 @app.command()
 def init(
-    python: Optional[str] = typer.Option(None, "--python", help="Python interpreter to use when creating the venv (e.g. python3.12)."),
-):
+    python: Optional[str] = typer.Option(
+        None,
+        "--python",
+        help="Python interpreter to use when creating the venv (e.g. python3.12).",
+    ),
+) -> None:
     """
     Initialize devr in this repo:
     - create/detect .venv
@@ -119,6 +148,7 @@ def init(
 
 
 def _staged_files(root: Path) -> list[str]:
+    """Return staged file paths from git, or an empty list on command failure."""
     proc = subprocess.run(
         ["git", "diff", "--name-only", "--cached"],
         cwd=str(root),
@@ -131,16 +161,27 @@ def _staged_files(root: Path) -> list[str]:
 
 
 def _filter_py(files: list[str]) -> list[str]:
+    """Filter file paths down to Python source and typing stub files."""
     return [f for f in files if f.endswith(".py") or f.endswith(".pyi")]
 
 
 @app.command()
 def check(
-    fix: bool = typer.Option(False, "--fix", help="Apply safe autofixes (ruff check --fix) and formatting."),
-    staged: bool = typer.Option(False, "--staged", help="Use staged files (git index) for changed-files mode."),
-    changed: bool = typer.Option(False, "--changed", help="Run on changed files only (paired with --staged recommended)."),
-    fast: bool = typer.Option(False, "--fast", help="Skip slow steps (defaults to skipping tests)."),
-):
+    fix: bool = typer.Option(
+        False, "--fix", help="Apply safe autofixes (ruff check --fix) and formatting."
+    ),
+    staged: bool = typer.Option(
+        False, "--staged", help="Use staged files (git index) for changed-files mode."
+    ),
+    changed: bool = typer.Option(
+        False,
+        "--changed",
+        help="Run on changed files only (paired with --staged recommended).",
+    ),
+    fast: bool = typer.Option(
+        False, "--fast", help="Skip slow steps (defaults to skipping tests)."
+    ),
+) -> None:
     """
     Run the full preflight gate inside the project venv:
     ruff lint + format check + typecheck + pytest + coverage threshold.
@@ -172,7 +213,9 @@ def check(
                 raise typer.Exit(code=code)
             # Format check
             fmt_target = files if files else ["."]
-            code = run_module(venv_dir, "ruff", ["format", "--check", *fmt_target], cwd=root)
+            code = run_module(
+                venv_dir, "ruff", ["format", "--check", *fmt_target], cwd=root
+            )
             if code != 0:
                 raise typer.Exit(code=code)
     elif cfg.formatter == "black":
@@ -207,7 +250,11 @@ def check(
 
     # 3) Tests + coverage
     if cfg.run_tests and not fast:
-        cov_args = ["--cov=.", "--cov-report=term-missing", f"--cov-fail-under={cfg.coverage_min}"]
+        cov_args = [
+            "--cov=.",
+            "--cov-report=term-missing",
+            f"--cov-fail-under={cfg.coverage_min}",
+        ]
         if cfg.coverage_branch:
             cov_args.insert(1, "--cov-branch")
         code = run_module(venv_dir, "pytest", [*cov_args], cwd=root)
@@ -218,8 +265,8 @@ def check(
 
 
 @app.command()
-def fix():
-    """Apply safe autofixes and formatting (inside venv)."""
+def fix() -> None:
+    """Apply configured lint fixes and formatting in the active project venv."""
     root = project_root()
     cfg = load_config(root)
     venv_dir = find_venv(root, cfg.venv_path)
@@ -241,8 +288,8 @@ def fix():
 
 
 @app.command()
-def security():
-    """Run security scans (pip-audit + bandit) inside venv."""
+def security() -> None:
+    """Run dependency and static-analysis security checks in the project venv."""
     root = project_root()
     cfg = load_config(root)
     venv_dir = find_venv(root, cfg.venv_path)

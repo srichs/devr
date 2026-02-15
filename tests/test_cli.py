@@ -1,3 +1,5 @@
+"""CLI behavior tests for devr commands."""
+
 from pathlib import Path
 
 from typer.testing import CliRunner

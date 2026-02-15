@@ -1,3 +1,5 @@
+"""Configuration parsing tests for devr."""
+
 from pathlib import Path
 
 from devr.config import DevrConfig, load_config
