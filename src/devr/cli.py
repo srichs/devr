@@ -169,7 +169,14 @@ def _changed_files(root: Path) -> list[str]:
         text=True,
     )
     if tracked.returncode != 0:
-        return []
+        tracked = subprocess.run(
+            ["git", "diff", "--name-only"],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+        )
+        if tracked.returncode != 0:
+            return []
 
     untracked = subprocess.run(
         ["git", "ls-files", "--others", "--exclude-standard"],
