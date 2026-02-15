@@ -8,6 +8,7 @@ DEFAULT_TOOLCHAIN = [
     "pyright>=1.1.380",
     "pre-commit>=3.7",
     "pip-audit>=2.7",
+    "black>=24.8",
 ]
 
 PRECOMMIT_LOCAL_HOOK_YAML = """\
