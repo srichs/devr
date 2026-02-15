@@ -160,6 +160,34 @@ def _staged_files(root: Path) -> list[str]:
     return [line.strip() for line in proc.stdout.splitlines() if line.strip()]
 
 
+def _changed_files(root: Path) -> list[str]:
+    """Return changed and untracked file paths from git, or an empty list on failure."""
+    tracked = subprocess.run(
+        ["git", "diff", "--name-only", "HEAD"],
+        cwd=str(root),
+        capture_output=True,
+        text=True,
+    )
+    if tracked.returncode != 0:
+        return []
+
+    untracked = subprocess.run(
+        ["git", "ls-files", "--others", "--exclude-standard"],
+        cwd=str(root),
+        capture_output=True,
+        text=True,
+    )
+    if untracked.returncode != 0:
+        return []
+
+    combined = [
+        line.strip()
+        for line in [*tracked.stdout.splitlines(), *untracked.stdout.splitlines()]
+        if line.strip()
+    ]
+    return list(dict.fromkeys(combined))
+
+
 def _filter_py(files: list[str]) -> list[str]:
     """Filter file paths down to Python source and typing stub files."""
     return [f for f in files if f.endswith(".py") or f.endswith(".pyi")]
@@ -204,8 +232,8 @@ def check(
     typer.echo(f"Using venv: {venv_dir}")
 
     files: list[str] = []
-    if changed and staged:
-        files = _filter_py(_staged_files(root))
+    if changed:
+        files = _filter_py(_staged_files(root) if staged else _changed_files(root))
 
     # 1) Format / lint
     if cfg.formatter == "ruff":
@@ -214,30 +242,34 @@ def check(
             _run_or_exit(venv_dir, "ruff", ["format", "."], root)
         else:
             # Lint (optionally scoped)
-            lint_target = files if files else ["."]
+            lint_target = files if changed else ["."]
+            if lint_target:
+                code = run_module(venv_dir, "ruff", ["check", *lint_target], cwd=root)
+                if code != 0:
+                    raise typer.Exit(code=code)
+                # Format check
+                code = run_module(
+                    venv_dir, "ruff", ["format", "--check", *lint_target], cwd=root
+                )
+                if code != 0:
+                    raise typer.Exit(code=code)
+            else:
+                typer.echo("No changed Python files detected; skipping lint/format.")
+    elif cfg.formatter == "black":
+        # Keep ruff lint, but black for formatting
+        lint_target = files if changed else ["."]
+        if lint_target:
             code = run_module(venv_dir, "ruff", ["check", *lint_target], cwd=root)
             if code != 0:
                 raise typer.Exit(code=code)
-            # Format check
-            fmt_target = files if files else ["."]
-            code = run_module(
-                venv_dir, "ruff", ["format", "--check", *fmt_target], cwd=root
-            )
+            black_args = ["-q"]
+            if not fix:
+                black_args.append("--check")
+            code = run_module(venv_dir, "black", [*black_args, *lint_target], cwd=root)
             if code != 0:
                 raise typer.Exit(code=code)
-    elif cfg.formatter == "black":
-        # Keep ruff lint, but black for formatting
-        lint_target = files if files else ["."]
-        code = run_module(venv_dir, "ruff", ["check", *lint_target], cwd=root)
-        if code != 0:
-            raise typer.Exit(code=code)
-        black_args = ["-q"]
-        if not fix:
-            black_args.append("--check")
-        fmt_target = files if files else ["."]
-        code = run_module(venv_dir, "black", [*black_args, *fmt_target], cwd=root)
-        if code != 0:
-            raise typer.Exit(code=code)
+        else:
+            typer.echo("No changed Python files detected; skipping lint/format.")
     else:
         typer.echo(f"Unknown formatter: {cfg.formatter} (expected ruff or black)")
         raise typer.Exit(code=2)

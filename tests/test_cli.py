@@ -198,6 +198,54 @@ def test_check_changed_staged_scopes_targets(monkeypatch, tmp_path: Path) -> Non
     assert calls[1] == ("ruff", ["format", "--check", "a.py", "c.pyi"])
 
 
+def test_check_changed_uses_worktree_files_without_staged(
+    monkeypatch, tmp_path: Path
+) -> None:
+    venv_path = (tmp_path / ".venv").resolve()
+    calls: list[tuple[str, list[str]]] = []
+
+    monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
+    monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(run_tests=False))
+    monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
+    monkeypatch.setattr("devr.cli._changed_files", lambda _: ["x.py", "notes.md"])
+
+    def _run_module(_venv, module: str, args: list[str], **_kwargs) -> int:
+        calls.append((module, args))
+        return 0
+
+    monkeypatch.setattr("devr.cli.run_module", _run_module)
+
+    result = runner.invoke(app, ["check", "--changed"])
+
+    assert result.exit_code == 0
+    assert calls[0] == ("ruff", ["check", "x.py"])
+    assert calls[1] == ("ruff", ["format", "--check", "x.py"])
+
+
+def test_check_changed_skips_lint_when_no_python_files(
+    monkeypatch, tmp_path: Path
+) -> None:
+    venv_path = (tmp_path / ".venv").resolve()
+    calls: list[tuple[str, list[str]]] = []
+
+    monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
+    monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(run_tests=False))
+    monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
+    monkeypatch.setattr("devr.cli._changed_files", lambda _: ["README.md"])
+
+    def _run_module(_venv, module: str, args: list[str], **_kwargs) -> int:
+        calls.append((module, args))
+        return 0
+
+    monkeypatch.setattr("devr.cli.run_module", _run_module)
+
+    result = runner.invoke(app, ["check", "--changed", "--fast"])
+
+    assert result.exit_code == 0
+    assert calls == [("mypy", ["."])]
+    assert "No changed Python files detected; skipping lint/format." in result.output
+
+
 def test_check_black_formatter_paths(monkeypatch, tmp_path: Path) -> None:
     venv_path = (tmp_path / ".venv").resolve()
     calls: list[tuple[str, list[str]]] = []
@@ -356,6 +404,20 @@ def test_staged_files_collects_paths(monkeypatch, tmp_path: Path) -> None:
     from devr.cli import _staged_files
 
     assert _staged_files(tmp_path) == ["a.py", "b.pyi"]
+
+
+def test_changed_files_collects_tracked_and_untracked(
+    monkeypatch, tmp_path: Path
+) -> None:
+    responses = [
+        SimpleNamespace(returncode=0, stdout="a.py\na.py\nsub/b.py\n"),
+        SimpleNamespace(returncode=0, stdout="new.py\n"),
+    ]
+    monkeypatch.setattr("devr.cli.subprocess.run", lambda *args, **kwargs: responses.pop(0))
+
+    from devr.cli import _changed_files
+
+    assert _changed_files(tmp_path) == ["a.py", "sub/b.py", "new.py"]
 
 
 def test_filter_py_includes_only_python_files() -> None:
