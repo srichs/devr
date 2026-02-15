@@ -1,6 +1,7 @@
 """CLI behavior tests for devr commands."""
 
 from pathlib import Path
+from types import SimpleNamespace
 
 from importlib.metadata import PackageNotFoundError
 
@@ -8,6 +9,7 @@ from typer.testing import CliRunner
 
 from devr.cli import app, install_project, write_precommit
 from devr.config import DevrConfig
+from devr.templates import PRECOMMIT_LOCAL_HOOK_YAML
 
 runner = CliRunner()
 
@@ -55,6 +57,17 @@ def test_security_runs_pip_audit_and_bandit(monkeypatch, tmp_path: Path) -> None
     assert "✅ devr security passed" in result.output
 
 
+def test_security_exits_when_no_venv(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
+    monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig())
+    monkeypatch.setattr("devr.cli.find_venv", lambda *_: None)
+
+    result = runner.invoke(app, ["security"])
+
+    assert result.exit_code == 2
+    assert "No venv found. Run: devr init" in result.output
+
+
 def test_devr_version_falls_back_when_package_not_installed(monkeypatch) -> None:
     def _raise(_: str) -> str:
         raise PackageNotFoundError
@@ -66,7 +79,9 @@ def test_devr_version_falls_back_when_package_not_installed(monkeypatch) -> None
     assert _devr_version() == "0.0.0"
 
 
-def test_install_project_falls_back_to_non_editable(monkeypatch, tmp_path: Path) -> None:
+def test_install_project_falls_back_to_non_editable(
+    monkeypatch, tmp_path: Path
+) -> None:
     (tmp_path / "pyproject.toml").write_text("[project]\nname='x'\n", encoding="utf-8")
     calls: list[list[str]] = []
 
@@ -102,7 +117,17 @@ def test_install_project_skips_when_no_dependency_file(tmp_path: Path, capsys) -
     assert "No pyproject.toml or requirements.txt found" in out
 
 
-def test_write_precommit_does_not_overwrite_existing_file(tmp_path: Path, capsys) -> None:
+def test_write_precommit_creates_default_file(tmp_path: Path) -> None:
+    cfg = tmp_path / ".pre-commit-config.yaml"
+
+    write_precommit(tmp_path)
+
+    assert cfg.read_text(encoding="utf-8") == PRECOMMIT_LOCAL_HOOK_YAML
+
+
+def test_write_precommit_does_not_overwrite_existing_file(
+    tmp_path: Path, capsys
+) -> None:
     cfg = tmp_path / ".pre-commit-config.yaml"
     cfg.write_text("already-there", encoding="utf-8")
 
@@ -136,6 +161,19 @@ def test_init_creates_venv_when_missing(monkeypatch, tmp_path: Path) -> None:
 
     assert result.exit_code == 0
     assert created == [((tmp_path / ".venv").resolve(), "python3.11")]
+
+
+def test_init_exits_when_venv_python_missing(monkeypatch, tmp_path: Path) -> None:
+    venv_path = (tmp_path / ".venv").resolve()
+
+    monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
+    monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig())
+    monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
+    monkeypatch.setattr("devr.cli.venv_python", lambda _: tmp_path / "missing-python")
+
+    result = runner.invoke(app, ["init"])
+
+    assert result.exit_code == 2
 
 
 def test_check_changed_staged_scopes_targets(monkeypatch, tmp_path: Path) -> None:
@@ -198,6 +236,60 @@ def test_check_exits_for_unknown_formatter(monkeypatch, tmp_path: Path) -> None:
     assert "Unknown formatter" in result.output
 
 
+def test_check_exits_for_unknown_typechecker(monkeypatch, tmp_path: Path) -> None:
+    venv_path = (tmp_path / ".venv").resolve()
+
+    monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
+    monkeypatch.setattr(
+        "devr.cli.load_config",
+        lambda _: DevrConfig(typechecker="odd", run_tests=False),
+    )
+    monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
+    monkeypatch.setattr("devr.cli.run_module", lambda *_args, **_kwargs: 0)
+
+    result = runner.invoke(app, ["check"])
+
+    assert result.exit_code == 2
+    assert "Unknown typechecker" in result.output
+
+
+def test_check_runs_pytest_with_branch_coverage(monkeypatch, tmp_path: Path) -> None:
+    venv_path = (tmp_path / ".venv").resolve()
+    calls: list[tuple[str, list[str]]] = []
+
+    monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
+    monkeypatch.setattr(
+        "devr.cli.load_config",
+        lambda _: DevrConfig(coverage_branch=True, coverage_min=85),
+    )
+    monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
+
+    def _run_module(_venv, module: str, args: list[str], **_kwargs) -> int:
+        calls.append((module, args))
+        return 0
+
+    monkeypatch.setattr("devr.cli.run_module", _run_module)
+
+    result = runner.invoke(app, ["check"])
+
+    assert result.exit_code == 0
+    assert calls[-1] == (
+        "pytest",
+        ["--cov=.", "--cov-branch", "--cov-report=term-missing", "--cov-fail-under=85"],
+    )
+
+
+def test_check_exits_when_no_venv(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
+    monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig())
+    monkeypatch.setattr("devr.cli.find_venv", lambda *_: None)
+
+    result = runner.invoke(app, ["check"])
+
+    assert result.exit_code == 2
+    assert "No venv found. Run: devr init" in result.output
+
+
 def test_fix_exits_for_unknown_formatter(monkeypatch, tmp_path: Path) -> None:
     venv_path = (tmp_path / ".venv").resolve()
 
@@ -209,3 +301,64 @@ def test_fix_exits_for_unknown_formatter(monkeypatch, tmp_path: Path) -> None:
 
     assert result.exit_code == 2
     assert "Unknown formatter" in result.output
+
+
+def test_fix_runs_ruff_commands(monkeypatch, tmp_path: Path) -> None:
+    venv_path = (tmp_path / ".venv").resolve()
+    calls: list[tuple[str, list[str]]] = []
+
+    monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
+    monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(formatter="ruff"))
+    monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
+    monkeypatch.setattr(
+        "devr.cli.run_module",
+        lambda _venv, module, args, **_kwargs: calls.append((module, args)) or 0,
+    )
+
+    result = runner.invoke(app, ["fix"])
+
+    assert result.exit_code == 0
+    assert calls == [
+        ("ruff", ["check", "--fix", "."]),
+        ("ruff", ["format", "."]),
+    ]
+
+
+def test_fix_exits_when_no_venv(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
+    monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig())
+    monkeypatch.setattr("devr.cli.find_venv", lambda *_: None)
+
+    result = runner.invoke(app, ["fix"])
+
+    assert result.exit_code == 2
+
+
+def test_staged_files_returns_empty_on_git_failure(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        "devr.cli.subprocess.run",
+        lambda *args, **kwargs: SimpleNamespace(returncode=1, stdout=""),
+    )
+
+    from devr.cli import _staged_files
+
+    assert _staged_files(tmp_path) == []
+
+
+def test_staged_files_collects_paths(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        "devr.cli.subprocess.run",
+        lambda *args, **kwargs: SimpleNamespace(
+            returncode=0, stdout="a.py\n\n b.pyi \n"
+        ),
+    )
+
+    from devr.cli import _staged_files
+
+    assert _staged_files(tmp_path) == ["a.py", "b.pyi"]
+
+
+def test_filter_py_includes_only_python_files() -> None:
+    from devr.cli import _filter_py
+
+    assert _filter_py(["a.py", "b.pyi", "README.md"]) == ["a.py", "b.pyi"]
