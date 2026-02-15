@@ -238,3 +238,26 @@ def fix():
         raise typer.Exit(code=2)
 
     typer.echo("✅ devr fix complete")
+
+
+@app.command()
+def security():
+    """Run security scans (pip-audit + bandit) inside venv."""
+    root = project_root()
+    cfg = load_config(root)
+    venv_dir = find_venv(root, cfg.venv_path)
+    if venv_dir is None:
+        typer.echo("No venv found. Run: devr init")
+        raise typer.Exit(code=2)
+
+    typer.echo(f"Using venv: {venv_dir}")
+
+    code = run_module(venv_dir, "pip_audit", [], cwd=root)
+    if code != 0:
+        raise typer.Exit(code=code)
+
+    code = run_module(venv_dir, "bandit", ["-r", ".", "-x", cfg.venv_path], cwd=root)
+    if code != 0:
+        raise typer.Exit(code=code)
+
+    typer.echo("✅ devr security passed")
