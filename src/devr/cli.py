@@ -57,11 +57,15 @@ def project_root() -> Path:
 def ensure_toolchain(venv_dir: Path, root: Path) -> None:
     """Install and/or upgrade required development tools inside ``venv_dir``."""
     # Upgrade pip basics
-    run_module(
+    code = run_module(
         venv_dir, "pip", ["install", "-U", "pip", "setuptools", "wheel"], cwd=root
     )
+    if code != 0:
+        raise typer.Exit(code=code)
     # Install toolchain
-    run_module(venv_dir, "pip", ["install", *DEFAULT_TOOLCHAIN], cwd=root)
+    code = run_module(venv_dir, "pip", ["install", *DEFAULT_TOOLCHAIN], cwd=root)
+    if code != 0:
+        raise typer.Exit(code=code)
 
 
 def install_project(venv_dir: Path, root: Path) -> None:
@@ -76,7 +80,11 @@ def install_project(venv_dir: Path, root: Path) -> None:
             typer.echo(
                 "Editable install failed; trying non-editable install (pip install .)"
             )
-            run_module(venv_dir, "pip", ["install", "."], cwd=root)
+            fallback_code = run_module(venv_dir, "pip", ["install", "."], cwd=root)
+            if fallback_code != 0:
+                typer.echo(
+                    "Warning: project install failed; continuing without installed project dependencies."
+                )
         return
 
     if reqs.exists():
@@ -101,7 +109,9 @@ def write_precommit(root: Path) -> None:
 def install_precommit_hook(venv_dir: Path, root: Path) -> None:
     """Install the local git pre-commit hook via ``pre_commit install``."""
     # Run pre-commit from inside the venv
-    run_module(venv_dir, "pre_commit", ["install"], cwd=root)
+    code = run_module(venv_dir, "pre_commit", ["install"], cwd=root)
+    if code != 0:
+        raise typer.Exit(code=code)
 
 
 @app.command()

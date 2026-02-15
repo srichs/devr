@@ -6,8 +6,9 @@ from types import SimpleNamespace
 from importlib.metadata import PackageNotFoundError
 
 from typer.testing import CliRunner
+from click.exceptions import Exit
 
-from devr.cli import app, install_project, write_precommit
+from devr.cli import app, ensure_toolchain, install_precommit_hook, install_project, write_precommit
 from devr.config import DevrConfig
 from devr.templates import PRECOMMIT_LOCAL_HOOK_YAML
 
@@ -110,6 +111,19 @@ def test_install_project_uses_requirements_file(monkeypatch, tmp_path: Path) -> 
     assert calls == [["install", "-r", "requirements.txt"]]
 
 
+def test_install_project_warns_when_both_install_attempts_fail(
+    monkeypatch, tmp_path: Path, capsys
+) -> None:
+    (tmp_path / "pyproject.toml").write_text("[project]\nname='x'\n", encoding="utf-8")
+
+    monkeypatch.setattr("devr.cli.run_module", lambda *_args, **_kwargs: 1)
+
+    install_project(tmp_path / ".venv", tmp_path)
+
+    out = capsys.readouterr().out
+    assert "Warning: project install failed" in out
+
+
 def test_install_project_skips_when_no_dependency_file(tmp_path: Path, capsys) -> None:
     install_project(tmp_path / ".venv", tmp_path)
 
@@ -136,6 +150,30 @@ def test_write_precommit_does_not_overwrite_existing_file(
     assert cfg.read_text(encoding="utf-8") == "already-there"
     out = capsys.readouterr().out
     assert "already exists" in out
+
+
+def test_ensure_toolchain_exits_when_bootstrap_install_fails(
+    monkeypatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr("devr.cli.run_module", lambda *_args, **_kwargs: 1)
+
+    try:
+        ensure_toolchain(tmp_path / ".venv", tmp_path)
+    except Exit as exc:
+        assert exc.exit_code == 1
+    else:
+        raise AssertionError("Expected ensure_toolchain to exit on failure")
+
+
+def test_install_precommit_hook_exits_on_failure(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr("devr.cli.run_module", lambda *_args, **_kwargs: 3)
+
+    try:
+        install_precommit_hook(tmp_path / ".venv", tmp_path)
+    except Exit as exc:
+        assert exc.exit_code == 3
+    else:
+        raise AssertionError("Expected install_precommit_hook to exit on failure")
 
 
 def test_init_creates_venv_when_missing(monkeypatch, tmp_path: Path) -> None:
