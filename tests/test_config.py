@@ -85,3 +85,14 @@ venv_path = "  "
     cfg = load_config(tmp_path)
 
     assert cfg.venv_path == DevrConfig().venv_path
+
+
+def test_load_config_invalid_toml_falls_back_to_defaults(tmp_path: Path) -> None:
+    _write_pyproject(tmp_path, """
+[tool.devr
+invalid = true
+""")
+
+    cfg = load_config(tmp_path)
+
+    assert cfg == DevrConfig()

@@ -484,3 +484,20 @@ def test_fix_exits_when_black_format_fails(monkeypatch, tmp_path: Path) -> None:
     result = runner.invoke(app, ["fix"])
 
     assert result.exit_code == 2
+
+
+def test_changed_files_falls_back_when_head_missing(
+    monkeypatch, tmp_path: Path
+) -> None:
+    responses = [
+        SimpleNamespace(returncode=1, stdout=""),
+        SimpleNamespace(returncode=0, stdout="tracked.py\n"),
+        SimpleNamespace(returncode=0, stdout="new.py\n"),
+    ]
+    monkeypatch.setattr(
+        "devr.cli.subprocess.run", lambda *args, **kwargs: responses.pop(0)
+    )
+
+    from devr.cli import _changed_files
+
+    assert _changed_files(tmp_path) == ["tracked.py", "new.py"]

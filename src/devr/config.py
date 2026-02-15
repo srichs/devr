@@ -11,6 +11,8 @@ try:
 except ImportError:  # pragma: no cover
     import tomli as tomllib  # type: ignore[import-not-found,no-redef]
 
+TOMLDecodeError = getattr(tomllib, "TOMLDecodeError", ValueError)
+
 
 @dataclass(frozen=True)
 class DevrConfig:
@@ -85,8 +87,11 @@ def load_config(project_root: Path) -> DevrConfig:
         return DevrConfig()
 
     data: dict[str, Any]
-    with pyproject.open("rb") as f:
-        data = tomllib.load(f)
+    try:
+        with pyproject.open("rb") as f:
+            data = tomllib.load(f)
+    except TOMLDecodeError:
+        return DevrConfig()
 
     tool = data.get("tool", {})
     devr = tool.get("devr", {}) if isinstance(tool, dict) else {}
