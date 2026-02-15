@@ -454,7 +454,9 @@ def test_check_fix_changed_scopes_ruff_targets(monkeypatch, tmp_path: Path) -> N
     monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
     monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(run_tests=False))
     monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
-    monkeypatch.setattr("devr.cli._staged_files", lambda _: ["a.py", "notes.md", "b.pyi"])
+    monkeypatch.setattr(
+        "devr.cli._staged_files", lambda _: ["a.py", "notes.md", "b.pyi"]
+    )
     monkeypatch.setattr(
         "devr.cli.run_module",
         lambda _venv, module, args, **_kwargs: calls.append((module, args)) or 0,
