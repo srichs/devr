@@ -51,3 +51,35 @@ run_tests = "not-a-bool"
     assert cfg.coverage_min == defaults.coverage_min
     assert cfg.coverage_branch == defaults.coverage_branch
     assert cfg.run_tests == defaults.run_tests
+
+
+def test_load_config_normalizes_string_values(tmp_path: Path) -> None:
+    _write_pyproject(
+        tmp_path,
+        """
+[tool.devr]
+venv_path = "  custom-venv  "
+formatter = "RuFf"
+typechecker = " PyRiGhT "
+""",
+    )
+
+    cfg = load_config(tmp_path)
+
+    assert cfg.venv_path == "custom-venv"
+    assert cfg.formatter == "ruff"
+    assert cfg.typechecker == "pyright"
+
+
+def test_load_config_invalid_venv_path_falls_back_to_default(tmp_path: Path) -> None:
+    _write_pyproject(
+        tmp_path,
+        """
+[tool.devr]
+venv_path = "  "
+""",
+    )
+
+    cfg = load_config(tmp_path)
+
+    assert cfg.venv_path == DevrConfig().venv_path

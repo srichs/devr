@@ -49,8 +49,18 @@ def _parse_int(value: Any, default: int, *, min_value: int | None = None, max_va
 
 
 def _parse_choice(value: Any, default: str, *, allowed: set[str]) -> str:
-    if isinstance(value, str) and value in allowed:
-        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in allowed:
+            return normalized
+    return default
+
+
+def _parse_venv_path(value: Any, default: str) -> str:
+    if isinstance(value, str):
+        normalized = value.strip()
+        if normalized:
+            return normalized
     return default
 
 
@@ -70,7 +80,7 @@ def load_config(project_root: Path) -> DevrConfig:
 
     base = DevrConfig()
     return DevrConfig(
-        venv_path=str(devr.get("venv_path", base.venv_path)),
+        venv_path=_parse_venv_path(devr.get("venv_path"), base.venv_path),
         formatter=_parse_choice(devr.get("formatter"), base.formatter, allowed={"ruff", "black"}),
         typechecker=_parse_choice(devr.get("typechecker"), base.typechecker, allowed={"mypy", "pyright"}),
         coverage_min=_parse_int(devr.get("coverage_min"), base.coverage_min, min_value=0, max_value=100),
