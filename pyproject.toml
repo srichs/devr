@@ -9,10 +9,9 @@ description = "Run a full Python dev preflight (ruff format/lint, typecheck, tes
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
-authors = [{ 
-    name = "srichs",
-    email = "srichs@pm.me",
-}]
+authors = [
+    {name = "srichs", email = "srichs@pm.me"},
+]
 dependencies = [
   "typer>=0.12",
   "tomli>=2.0; python_version<'3.11'",
