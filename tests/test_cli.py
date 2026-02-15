@@ -8,7 +8,13 @@ from importlib.metadata import PackageNotFoundError
 from typer.testing import CliRunner
 from click.exceptions import Exit
 
-from devr.cli import app, ensure_toolchain, install_precommit_hook, install_project, write_precommit
+from devr.cli import (
+    app,
+    ensure_toolchain,
+    install_precommit_hook,
+    install_project,
+    write_precommit,
+)
 from devr.config import DevrConfig
 from devr.templates import PRECOMMIT_LOCAL_HOOK_YAML
 
