@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "devr"
+version = "0.0.0"
+description = "Run a full Python dev preflight (ruff format/lint, typecheck, tests, coverage) inside your project venv."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ 
+    name = "srichs",
+    email = "srichs@pm.me",
+}]
+dependencies = [
+  "typer>=0.12",
+  "tomli>=2.0; python_version<'3.11'",
+]
+
+[project.scripts]
+devr = "devr.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/srichs/devr"
+Repository = "https://github.com/srichs/devr"
+Issues = "https://github.com/srichs/devr/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["devr"]
