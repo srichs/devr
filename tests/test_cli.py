@@ -362,3 +362,41 @@ def test_filter_py_includes_only_python_files() -> None:
     from devr.cli import _filter_py
 
     assert _filter_py(["a.py", "b.pyi", "README.md"]) == ["a.py", "b.pyi"]
+
+
+def test_check_fix_exits_when_ruff_fix_fails(monkeypatch, tmp_path: Path) -> None:
+    venv_path = (tmp_path / ".venv").resolve()
+
+    monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
+    monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(run_tests=False))
+    monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
+
+    def _run_module(_venv, module: str, args: list[str], **_kwargs) -> int:
+        if module == "ruff" and args == ["check", "--fix", "."]:
+            return 1
+        return 0
+
+    monkeypatch.setattr("devr.cli.run_module", _run_module)
+
+    result = runner.invoke(app, ["check", "--fix", "--fast"])
+
+    assert result.exit_code == 1
+
+
+def test_fix_exits_when_black_format_fails(monkeypatch, tmp_path: Path) -> None:
+    venv_path = (tmp_path / ".venv").resolve()
+
+    monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
+    monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(formatter="black"))
+    monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
+
+    def _run_module(_venv, module: str, args: list[str], **_kwargs) -> int:
+        if module == "black" and args == ["."]:
+            return 2
+        return 0
+
+    monkeypatch.setattr("devr.cli.run_module", _run_module)
+
+    result = runner.invoke(app, ["fix"])
+
+    assert result.exit_code == 2

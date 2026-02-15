@@ -165,6 +165,13 @@ def _filter_py(files: list[str]) -> list[str]:
     return [f for f in files if f.endswith(".py") or f.endswith(".pyi")]
 
 
+def _run_or_exit(venv_dir: Path, module: str, args: list[str], root: Path) -> None:
+    """Run a module command and exit with its code when the command fails."""
+    code = run_module(venv_dir, module, args, cwd=root)
+    if code != 0:
+        raise typer.Exit(code=code)
+
+
 @app.command()
 def check(
     fix: bool = typer.Option(
@@ -203,8 +210,8 @@ def check(
     # 1) Format / lint
     if cfg.formatter == "ruff":
         if fix:
-            run_module(venv_dir, "ruff", ["check", "--fix", "."], cwd=root)
-            run_module(venv_dir, "ruff", ["format", "."], cwd=root)
+            _run_or_exit(venv_dir, "ruff", ["check", "--fix", "."], root)
+            _run_or_exit(venv_dir, "ruff", ["format", "."], root)
         else:
             # Lint (optionally scoped)
             lint_target = files if files else ["."]
@@ -275,11 +282,11 @@ def fix() -> None:
         raise typer.Exit(code=2)
 
     if cfg.formatter == "ruff":
-        run_module(venv_dir, "ruff", ["check", "--fix", "."], cwd=root)
-        run_module(venv_dir, "ruff", ["format", "."], cwd=root)
+        _run_or_exit(venv_dir, "ruff", ["check", "--fix", "."], root)
+        _run_or_exit(venv_dir, "ruff", ["format", "."], root)
     elif cfg.formatter == "black":
-        run_module(venv_dir, "ruff", ["check", "--fix", "."], cwd=root)
-        run_module(venv_dir, "black", ["."], cwd=root)
+        _run_or_exit(venv_dir, "ruff", ["check", "--fix", "."], root)
+        _run_or_exit(venv_dir, "black", ["."], root)
     else:
         typer.echo(f"Unknown formatter: {cfg.formatter}")
         raise typer.Exit(code=2)
