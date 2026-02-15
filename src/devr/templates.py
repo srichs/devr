@@ -1,3 +1,5 @@
+"""Template values used by the CLI bootstrap commands."""
+
 from __future__ import annotations
 
 DEFAULT_TOOLCHAIN = [
