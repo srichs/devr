@@ -1,5 +1,6 @@
 """CLI behavior tests for devr commands."""
 
+import subprocess
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -795,3 +796,29 @@ def test_project_root_falls_back_to_cwd_when_no_markers(
     from devr.cli import project_root
 
     assert project_root() == plain.resolve()
+
+
+def test_staged_files_returns_empty_on_git_timeout(
+    monkeypatch, tmp_path: Path
+) -> None:
+    def _raise(*_args, **_kwargs):
+        raise subprocess.TimeoutExpired(cmd="git", timeout=10)
+
+    monkeypatch.setattr("devr.cli.subprocess.run", _raise)
+
+    from devr.cli import _staged_files
+
+    assert _staged_files(tmp_path) == []
+
+
+def test_changed_files_returns_empty_on_git_timeout(
+    monkeypatch, tmp_path: Path
+) -> None:
+    def _raise(*_args, **_kwargs):
+        raise subprocess.TimeoutExpired(cmd="git", timeout=10)
+
+    monkeypatch.setattr("devr.cli.subprocess.run", _raise)
+
+    from devr.cli import _changed_files
+
+    assert _changed_files(tmp_path) == []
