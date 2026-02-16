@@ -210,6 +210,17 @@ def _filter_py(files: list[str]) -> list[str]:
     return [f for f in files if f.endswith(".py") or f.endswith(".pyi")]
 
 
+def _existing_files(root: Path, files: list[str]) -> list[str]:
+    """Return only file paths that currently exist under ``root``."""
+    existing: list[str] = []
+    for file in files:
+        candidate = Path(file)
+        path = candidate if candidate.is_absolute() else root / candidate
+        if path.exists():
+            existing.append(file)
+    return existing
+
+
 def _run_or_exit(venv_dir: Path, module: str, args: list[str], root: Path) -> None:
     """Run a module command and exit with its code when the command fails."""
     code = run_module(venv_dir, module, args, cwd=root)
@@ -250,7 +261,9 @@ def check(
 
     files: list[str] = []
     if changed:
-        files = _filter_py(_staged_files(root) if staged else _changed_files(root))
+        files = _existing_files(
+            root, _filter_py(_staged_files(root) if staged else _changed_files(root))
+        )
 
     # 1) Format / lint
     if cfg.formatter == "ruff":
