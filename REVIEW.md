@@ -4,9 +4,9 @@ This review focuses on reliability, UX, and maintainability for `devr`.
 
 ## High-impact improvements
 
-1. **Add integration tests for end-to-end commands in temporary git repos.**
-   - Current tests are strong at the unit level, but critical user workflows (`devr init`, `devr check --changed`, `devr security`) rely on subprocess and git behavior that can drift across platforms.
-   - Add tests that create a temp repository, initialize a venv fixture (or mock executable commands), and assert command outputs and exit codes.
+1. **✅ Add integration tests for end-to-end commands in temporary git repos.**
+   - Added CLI integration tests that initialize temporary git repositories and exercise real git interactions for `devr check --changed` and `devr init`.
+   - Tests create lightweight venv fixtures, mock module execution, and assert command behavior (target selection/call ordering) and successful exit codes.
 
 2. **✅ Improve check-stage diagnostics with explicit command summaries.**
    - `devr check` now prints stage headers per invocation (for example: `Stage: ruff check`, `Stage: ruff format --check`, `Stage: mypy`, `Stage: pytest`) and keeps explicit `Running: ...` command summaries.
