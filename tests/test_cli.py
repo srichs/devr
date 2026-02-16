@@ -78,7 +78,15 @@ def test_security_runs_pip_audit_and_bandit(monkeypatch, tmp_path: Path) -> None
     assert result.exit_code == 0
     assert calls == [
         ("pip_audit", []),
-        ("bandit", ["-r", ".", "-x", ".venv,venv,env"]),
+        (
+            "bandit",
+            [
+                "-r",
+                ".",
+                "-x",
+                ".venv,venv,env,.git,__pycache__,.mypy_cache,.pytest_cache,.ruff_cache,.tox,.nox,build,dist",
+            ],
+        ),
     ]
     assert "✅ devr security passed" in result.output
 
@@ -88,7 +96,10 @@ def test_bandit_excludes_include_detected_relative_venv(tmp_path: Path) -> None:
 
     excludes = _bandit_excludes(tmp_path, ".venv", tmp_path / "custom-venv")
 
-    assert excludes == ".venv,venv,env,custom-venv"
+    assert (
+        excludes
+        == ".venv,venv,env,.git,__pycache__,.mypy_cache,.pytest_cache,.ruff_cache,.tox,.nox,build,dist,custom-venv"
+    )
 
 
 def test_security_exits_when_no_venv(monkeypatch, tmp_path: Path) -> None:

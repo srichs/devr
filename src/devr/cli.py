@@ -243,7 +243,21 @@ def _typecheck_targets(changed: bool, files: list[str]) -> list[str]:
 
 def _bandit_excludes(root: Path, configured_venv_path: str, venv_dir: Path) -> str:
     """Build a comma-separated exclusion list for bandit scans."""
-    excludes: list[str] = [configured_venv_path, ".venv", "venv", "env"]
+    excludes: list[str] = [
+        configured_venv_path,
+        ".venv",
+        "venv",
+        "env",
+        ".git",
+        "__pycache__",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".ruff_cache",
+        ".tox",
+        ".nox",
+        "build",
+        "dist",
+    ]
     try:
         rel_venv = venv_dir.resolve().relative_to(root.resolve())
         excludes.append(rel_venv.as_posix())
