@@ -710,7 +710,9 @@ def test_project_root_prefers_nearest_pyproject(monkeypatch, tmp_path: Path) -> 
     project = tmp_path / "repo"
     nested = project / "src" / "pkg"
     nested.mkdir(parents=True)
-    (project / "pyproject.toml").write_text("[project]\nname='demo'\n", encoding="utf-8")
+    (project / "pyproject.toml").write_text(
+        "[project]\nname='demo'\n", encoding="utf-8"
+    )
 
     monkeypatch.chdir(nested)
 
