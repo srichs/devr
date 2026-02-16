@@ -44,7 +44,9 @@ def test_check_prints_selected_venv(monkeypatch, tmp_path: Path) -> None:
     assert f"Using venv: {venv_path}" in result.output
 
 
-def test_check_warns_when_staged_used_without_changed(monkeypatch, tmp_path: Path) -> None:
+def test_check_warns_when_staged_used_without_changed(
+    monkeypatch, tmp_path: Path
+) -> None:
     venv_path = (tmp_path / ".venv").resolve()
 
     monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
