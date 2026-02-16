@@ -827,6 +827,7 @@ def test_changed_files_falls_back_when_head_missing(
     responses = [
         SimpleNamespace(returncode=1, stdout=""),
         SimpleNamespace(returncode=0, stdout="tracked.py\n"),
+        SimpleNamespace(returncode=0, stdout="staged.py\n"),
         SimpleNamespace(returncode=0, stdout="new.py\n"),
     ]
     monkeypatch.setattr(
@@ -835,7 +836,7 @@ def test_changed_files_falls_back_when_head_missing(
 
     from devr.cli import _changed_files
 
-    assert _changed_files(tmp_path) == ["tracked.py", "new.py"]
+    assert _changed_files(tmp_path) == ["tracked.py", "staged.py", "new.py"]
 
 
 def test_changed_files_returns_empty_when_git_is_unavailable(
