@@ -704,3 +704,29 @@ def test_changed_files_returns_empty_when_git_is_unavailable(
     from devr.cli import _changed_files
 
     assert _changed_files(tmp_path) == []
+
+
+def test_project_root_prefers_nearest_pyproject(monkeypatch, tmp_path: Path) -> None:
+    project = tmp_path / "repo"
+    nested = project / "src" / "pkg"
+    nested.mkdir(parents=True)
+    (project / "pyproject.toml").write_text("[project]\nname='demo'\n", encoding="utf-8")
+
+    monkeypatch.chdir(nested)
+
+    from devr.cli import project_root
+
+    assert project_root() == project.resolve()
+
+
+def test_project_root_falls_back_to_cwd_when_no_markers(
+    monkeypatch, tmp_path: Path
+) -> None:
+    plain = tmp_path / "plain" / "nested"
+    plain.mkdir(parents=True)
+
+    monkeypatch.chdir(plain)
+
+    from devr.cli import project_root
+
+    assert project_root() == plain.resolve()

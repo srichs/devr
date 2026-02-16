@@ -49,9 +49,14 @@ def main(
 
 
 def project_root() -> Path:
-    """Return the current working directory as the project root."""
-    # MVP: assume current working directory is project root
-    return Path.cwd()
+    """Return the nearest ancestor directory that looks like a project root."""
+    cwd = Path.cwd().resolve()
+
+    for candidate in (cwd, *cwd.parents):
+        if (candidate / "pyproject.toml").exists() or (candidate / ".git").exists():
+            return candidate
+
+    return cwd
 
 
 def ensure_toolchain(venv_dir: Path, root: Path) -> None:
