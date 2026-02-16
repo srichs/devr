@@ -12,9 +12,9 @@ This review focuses on reliability, UX, and maintainability for `devr`.
    - `devr check` runs multiple stages but does not print stage headers for each tool invocation.
    - Adding clear stage output (e.g., `Running: ruff check`, `Running: mypy`, `Running: pytest`) helps users quickly identify failures in CI logs.
 
-3. **Add optional fail-fast toggle for security checks.**
-   - `devr security` currently runs both `pip-audit` and `bandit` and reports aggregate failure.
-   - Consider `--fail-fast` (exit after first failure) and `--json` output mode for CI systems that parse results.
+3. **✅ Add optional fail-fast toggle for security checks.**
+   - `devr security` now supports `--fail-fast` and exits after the first failing check.
+   - `--json` output mode is still open for future CI integration improvements.
 
 ## Medium-impact improvements
 

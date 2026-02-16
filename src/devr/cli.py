@@ -487,7 +487,13 @@ def fix() -> None:
 
 
 @app.command()
-def security() -> None:
+def security(
+    fail_fast: bool = typer.Option(
+        False,
+        "--fail-fast",
+        help="Exit after the first failing security check.",
+    ),
+) -> None:
     """Run dependency and static-analysis security checks in the project venv."""
     root = project_root()
     cfg = load_config(root)
@@ -498,14 +504,20 @@ def security() -> None:
 
     typer.echo(f"Using venv: {venv_dir}")
 
-    pip_audit_code = run_module(venv_dir, "pip_audit", [], cwd=root)
+    pip_audit_code = _run_with_summary(venv_dir, "pip_audit", [], root)
+    if pip_audit_code != 0 and fail_fast:
+        typer.echo("Security checks failed: pip-audit")
+        raise typer.Exit(code=1)
 
-    bandit_code = run_module(
+    bandit_code = _run_with_summary(
         venv_dir,
         "bandit",
         ["-r", ".", "-x", _bandit_excludes(root, cfg.venv_path, venv_dir)],
-        cwd=root,
+        root,
     )
+    if bandit_code != 0 and fail_fast:
+        typer.echo("Security checks failed: bandit")
+        raise typer.Exit(code=1)
 
     failed_checks: list[str] = []
     if pip_audit_code != 0:
