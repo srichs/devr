@@ -241,6 +241,19 @@ def _typecheck_targets(changed: bool, files: list[str]) -> list[str]:
     return files
 
 
+def _bandit_excludes(root: Path, configured_venv_path: str, venv_dir: Path) -> str:
+    """Build a comma-separated exclusion list for bandit scans."""
+    excludes: list[str] = [configured_venv_path, ".venv", "venv", "env"]
+    try:
+        rel_venv = venv_dir.resolve().relative_to(root.resolve())
+        excludes.append(rel_venv.as_posix())
+    except ValueError:
+        # Active environment can be outside the project root; keep default exclusions.
+        pass
+
+    return ",".join(dict.fromkeys(excludes))
+
+
 @app.command()
 def check(
     fix: bool = typer.Option(
@@ -395,7 +408,12 @@ def security() -> None:
     if code != 0:
         raise typer.Exit(code=code)
 
-    code = run_module(venv_dir, "bandit", ["-r", ".", "-x", cfg.venv_path], cwd=root)
+    code = run_module(
+        venv_dir,
+        "bandit",
+        ["-r", ".", "-x", _bandit_excludes(root, cfg.venv_path, venv_dir)],
+        cwd=root,
+    )
     if code != 0:
         raise typer.Exit(code=code)
 
