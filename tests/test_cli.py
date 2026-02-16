@@ -56,10 +56,11 @@ def test_check_prints_stage_and_command_summaries(monkeypatch, tmp_path: Path) -
     result = runner.invoke(app, ["check", "--fast"])
 
     assert result.exit_code == 0
-    assert "Stage: lint + format" in result.output
+    assert "Stage: ruff check" in result.output
     assert "Running: ruff check ." in result.output
     assert "Running: ruff format --check ." in result.output
-    assert "Stage: type checking" in result.output
+    assert "Stage: ruff format --check" in result.output
+    assert "Stage: mypy" in result.output
     assert "Running: mypy ." in result.output
 
 

@@ -8,9 +8,9 @@ This review focuses on reliability, UX, and maintainability for `devr`.
    - Current tests are strong at the unit level, but critical user workflows (`devr init`, `devr check --changed`, `devr security`) rely on subprocess and git behavior that can drift across platforms.
    - Add tests that create a temp repository, initialize a venv fixture (or mock executable commands), and assert command outputs and exit codes.
 
-2. **Improve check-stage diagnostics with explicit command summaries.**
-   - `devr check` runs multiple stages but does not print stage headers for each tool invocation.
-   - Adding clear stage output (e.g., `Running: ruff check`, `Running: mypy`, `Running: pytest`) helps users quickly identify failures in CI logs.
+2. **✅ Improve check-stage diagnostics with explicit command summaries.**
+   - `devr check` now prints stage headers per invocation (for example: `Stage: ruff check`, `Stage: ruff format --check`, `Stage: mypy`, `Stage: pytest`) and keeps explicit `Running: ...` command summaries.
+   - This makes CI logs easier to scan and helps users quickly identify which exact command failed.
 
 3. **✅ Add optional fail-fast toggle for security checks.**
    - `devr security` now supports `--fail-fast` and exits after the first failing check.

@@ -285,6 +285,18 @@ def _run_with_summary(venv_dir: Path, module: str, args: list[str], root: Path) 
     return run_module(venv_dir, module, args, cwd=root)
 
 
+def _run_check_stage(
+    venv_dir: Path,
+    module: str,
+    args: list[str],
+    root: Path,
+    stage_name: str,
+) -> int:
+    """Print a check-stage header, then execute the command."""
+    typer.echo(f"Stage: {stage_name}")
+    return _run_with_summary(venv_dir, module, args, root)
+
+
 def _typecheck_targets(changed: bool, files: list[str]) -> list[str]:
     """Return type-check targets, scoping to changed files when requested."""
     if not changed:
@@ -379,58 +391,78 @@ def check(
 
     # 1) Format / lint
     if cfg.formatter == "ruff":
-        typer.echo("Stage: lint + format")
         if fix:
             fix_target = files if changed else ["."]
             if fix_target:
-                _run_or_exit(
+                code = _run_check_stage(
                     venv_dir,
                     "ruff",
                     ["check", "--fix", *fix_target],
                     root,
+                    "ruff check --fix",
                 )
-                _run_or_exit(venv_dir, "ruff", ["format", *fix_target], root)
+                if code != 0:
+                    raise typer.Exit(code=code)
+
+                code = _run_check_stage(
+                    venv_dir,
+                    "ruff",
+                    ["format", *fix_target],
+                    root,
+                    "ruff format",
+                )
+                if code != 0:
+                    raise typer.Exit(code=code)
             else:
                 typer.echo("No changed Python files detected; skipping lint/format.")
         else:
             # Lint (optionally scoped)
             lint_target = files if changed else ["."]
             if lint_target:
-                code = _run_with_summary(
+                code = _run_check_stage(
                     venv_dir,
                     "ruff",
                     ["check", *lint_target],
                     root,
+                    "ruff check",
                 )
                 if code != 0:
                     raise typer.Exit(code=code)
                 # Format check
-                code = _run_with_summary(
+                code = _run_check_stage(
                     venv_dir,
                     "ruff",
                     ["format", "--check", *lint_target],
                     root,
+                    "ruff format --check",
                 )
                 if code != 0:
                     raise typer.Exit(code=code)
             else:
                 typer.echo("No changed Python files detected; skipping lint/format.")
     elif cfg.formatter == "black":
-        typer.echo("Stage: lint + format")
         # Keep ruff lint, but black for formatting
         lint_target = files if changed else ["."]
         if lint_target:
-            code = _run_with_summary(venv_dir, "ruff", ["check", *lint_target], root)
+            code = _run_check_stage(
+                venv_dir,
+                "ruff",
+                ["check", *lint_target],
+                root,
+                "ruff check",
+            )
             if code != 0:
                 raise typer.Exit(code=code)
             black_args = ["-q"]
             if not fix:
                 black_args.append("--check")
-            code = _run_with_summary(
+            stage_name = "black" if fix else "black --check"
+            code = _run_check_stage(
                 venv_dir,
                 "black",
                 [*black_args, *lint_target],
                 root,
+                stage_name,
             )
             if code != 0:
                 raise typer.Exit(code=code)
@@ -445,13 +477,24 @@ def check(
     if not typecheck_target:
         typer.echo("No changed Python files detected; skipping type checks.")
     else:
-        typer.echo("Stage: type checking")
         if cfg.typechecker == "mypy":
-            code = _run_with_summary(venv_dir, "mypy", typecheck_target, root)
+            code = _run_check_stage(
+                venv_dir,
+                "mypy",
+                typecheck_target,
+                root,
+                "mypy",
+            )
             if code != 0:
                 raise typer.Exit(code=code)
         elif cfg.typechecker == "pyright":
-            code = _run_with_summary(venv_dir, "pyright", typecheck_target, root)
+            code = _run_check_stage(
+                venv_dir,
+                "pyright",
+                typecheck_target,
+                root,
+                "pyright",
+            )
             if code != 0:
                 raise typer.Exit(code=code)
         else:
@@ -462,7 +505,6 @@ def check(
 
     # 3) Tests + coverage
     if cfg.run_tests and not fast and not no_tests:
-        typer.echo("Stage: tests")
         cov_args = [
             "--cov=.",
             "--cov-report=term-missing",
@@ -470,7 +512,13 @@ def check(
         ]
         if cfg.coverage_branch:
             cov_args.insert(1, "--cov-branch")
-        code = _run_with_summary(venv_dir, "pytest", [*cov_args], root)
+        code = _run_check_stage(
+            venv_dir,
+            "pytest",
+            [*cov_args],
+            root,
+            "pytest",
+        )
         if code != 0:
             raise typer.Exit(code=code)
     elif no_tests:
