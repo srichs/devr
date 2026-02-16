@@ -426,7 +426,10 @@ def test_check_no_tests_skips_pytest(monkeypatch, tmp_path: Path) -> None:
     result = runner.invoke(app, ["check", "--no-tests"])
 
     assert result.exit_code == 0
-    assert ("pytest", ["--cov=.", "--cov-branch", "--cov-report=term-missing", "--cov-fail-under=85"]) not in calls
+    assert (
+        "pytest",
+        ["--cov=.", "--cov-branch", "--cov-report=term-missing", "--cov-fail-under=85"],
+    ) not in calls
     assert "Skipping tests (--no-tests)." in result.output
 
 
@@ -861,4 +864,7 @@ def test_check_changed_warns_when_git_state_unavailable(
     result = runner.invoke(app, ["check", "--changed", "--fast"])
 
     assert result.exit_code == 0
-    assert "Warning: unable to read git state; --changed mode found no file targets." in result.output
+    assert (
+        "Warning: unable to read git state; --changed mode found no file targets."
+        in result.output
+    )

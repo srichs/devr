@@ -311,7 +311,10 @@ def check(
     if changed:
         changed_candidates = _staged_files(root) if staged else _changed_files(root)
         files = _existing_files(root, _filter_py(changed_candidates))
-        if not changed_candidates and _run_git(root, ["rev-parse", "--is-inside-work-tree"]) is None:
+        if (
+            not changed_candidates
+            and _run_git(root, ["rev-parse", "--is-inside-work-tree"]) is None
+        ):
             typer.echo(
                 "Warning: unable to read git state; --changed mode found no file targets."
             )
