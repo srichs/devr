@@ -119,6 +119,10 @@ def write_precommit(root: Path) -> None:
 
 def install_precommit_hook(venv_dir: Path, root: Path) -> None:
     """Install the local git pre-commit hook via ``pre_commit install``."""
+    if _run_git(root, ["rev-parse", "--is-inside-work-tree"]) is None:
+        typer.echo("No git repository found; skipping pre-commit hook install.")
+        return
+
     # Run pre-commit from inside the venv
     code = run_module(venv_dir, "pre_commit", ["install"], cwd=root)
     if code != 0:

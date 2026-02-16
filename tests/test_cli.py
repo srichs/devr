@@ -261,6 +261,10 @@ def test_ensure_toolchain_exits_when_bootstrap_install_fails(
 
 
 def test_install_precommit_hook_exits_on_failure(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        "devr.cli._run_git",
+        lambda *_args, **_kwargs: SimpleNamespace(returncode=0, stdout="true\n"),
+    )
     monkeypatch.setattr("devr.cli.run_module", lambda *_args, **_kwargs: 3)
 
     try:
@@ -269,6 +273,18 @@ def test_install_precommit_hook_exits_on_failure(monkeypatch, tmp_path: Path) ->
         assert exc.exit_code == 3
     else:
         raise AssertionError("Expected install_precommit_hook to exit on failure")
+
+
+def test_install_precommit_hook_skips_outside_git_repo(
+    monkeypatch, tmp_path: Path, capsys
+) -> None:
+    monkeypatch.setattr("devr.cli._run_git", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr("devr.cli.run_module", lambda *_args, **_kwargs: 0)
+
+    install_precommit_hook(tmp_path / ".venv", tmp_path)
+
+    out = capsys.readouterr().out
+    assert "No git repository found; skipping pre-commit hook install." in out
 
 
 def test_init_creates_venv_when_missing(monkeypatch, tmp_path: Path) -> None:
