@@ -438,17 +438,22 @@ def security() -> None:
 
     typer.echo(f"Using venv: {venv_dir}")
 
-    code = run_module(venv_dir, "pip_audit", [], cwd=root)
-    if code != 0:
-        raise typer.Exit(code=code)
+    pip_audit_code = run_module(venv_dir, "pip_audit", [], cwd=root)
 
-    code = run_module(
+    bandit_code = run_module(
         venv_dir,
         "bandit",
         ["-r", ".", "-x", _bandit_excludes(root, cfg.venv_path, venv_dir)],
         cwd=root,
     )
-    if code != 0:
-        raise typer.Exit(code=code)
+
+    failed_checks: list[str] = []
+    if pip_audit_code != 0:
+        failed_checks.append("pip-audit")
+    if bandit_code != 0:
+        failed_checks.append("bandit")
+    if failed_checks:
+        typer.echo(f"Security checks failed: {', '.join(failed_checks)}")
+        raise typer.Exit(code=1)
 
     typer.echo("✅ devr security passed")

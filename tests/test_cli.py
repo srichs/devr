@@ -91,6 +91,40 @@ def test_security_runs_pip_audit_and_bandit(monkeypatch, tmp_path: Path) -> None
     assert "✅ devr security passed" in result.output
 
 
+
+
+def test_security_runs_bandit_even_when_pip_audit_fails(monkeypatch, tmp_path: Path) -> None:
+    venv_path = (tmp_path / ".venv").resolve()
+    calls: list[str] = []
+
+    def _run_module(_venv, module: str, _args: list[str], **_kwargs) -> int:
+        calls.append(module)
+        return 1 if module == "pip_audit" else 0
+
+    monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
+    monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(venv_path=".venv"))
+    monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
+    monkeypatch.setattr("devr.cli.run_module", _run_module)
+
+    result = runner.invoke(app, ["security"])
+
+    assert result.exit_code == 1
+    assert calls == ["pip_audit", "bandit"]
+    assert "Security checks failed: pip-audit" in result.output
+
+
+def test_security_reports_multiple_failures(monkeypatch, tmp_path: Path) -> None:
+    venv_path = (tmp_path / ".venv").resolve()
+
+    monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
+    monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(venv_path=".venv"))
+    monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
+    monkeypatch.setattr("devr.cli.run_module", lambda *_args, **_kwargs: 1)
+
+    result = runner.invoke(app, ["security"])
+
+    assert result.exit_code == 1
+    assert "Security checks failed: pip-audit, bandit" in result.output
 def test_bandit_excludes_include_detected_relative_venv(tmp_path: Path) -> None:
     from devr.cli import _bandit_excludes
 
