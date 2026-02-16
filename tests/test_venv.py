@@ -89,8 +89,11 @@ def test_create_venv_uses_current_interpreter_by_default(
 ) -> None:
     calls: list[list[str]] = []
 
+    def _check_call(args: list[str]) -> None:
+        calls.append(args)
+
     monkeypatch.setattr(venv.sys, "executable", "/usr/bin/python-test")
-    monkeypatch.setattr(venv.subprocess, "check_call", lambda args: calls.append(args))
+    monkeypatch.setattr(venv.subprocess, "check_call", _check_call)
 
     target = tmp_path / ".venv"
     venv.create_venv(tmp_path, target)
@@ -103,11 +106,11 @@ def test_run_py_calls_subprocess_with_venv_python(monkeypatch, tmp_path: Path) -
     venv_dir = tmp_path / ".venv"
 
     monkeypatch.setattr(venv, "venv_python", lambda _: Path("/tmp/python"))
-    monkeypatch.setattr(
-        venv.subprocess,
-        "call",
-        lambda args, cwd: calls.append((args, cwd)) or 7,
-    )
+    def _call(args: list[str], cwd: str) -> int:
+        calls.append((args, cwd))
+        return 7
+
+    monkeypatch.setattr(venv.subprocess, "call", _call)
 
     code = venv.run_py(venv_dir, ["-V"], cwd=tmp_path)
 

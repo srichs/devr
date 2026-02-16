@@ -182,10 +182,11 @@ def test_install_project_uses_requirements_file(monkeypatch, tmp_path: Path) -> 
     (tmp_path / "requirements.txt").write_text("pytest\n", encoding="utf-8")
     calls: list[list[str]] = []
 
-    monkeypatch.setattr(
-        "devr.cli.run_module",
-        lambda _venv, _module, args, **_kwargs: calls.append(args) or 0,
-    )
+    def _run_module(_venv, _module: str, args: list[str], **_kwargs) -> int:
+        calls.append(args)
+        return 0
+
+    monkeypatch.setattr("devr.cli.run_module", _run_module)
 
     install_project(tmp_path / ".venv", tmp_path)
 
@@ -395,10 +396,11 @@ def test_check_changed_runs_pytest_when_no_python_files(
     )
     monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
     monkeypatch.setattr("devr.cli._changed_files", lambda _: ["README.md"])
-    monkeypatch.setattr(
-        "devr.cli.run_module",
-        lambda _venv, module, args, **_kwargs: calls.append((module, args)) or 0,
-    )
+    def _run_module(_venv, module: str, args: list[str], **_kwargs) -> int:
+        calls.append((module, args))
+        return 0
+
+    monkeypatch.setattr("devr.cli.run_module", _run_module)
 
     result = runner.invoke(app, ["check", "--changed"])
 
@@ -418,10 +420,11 @@ def test_check_no_tests_skips_pytest(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
     monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(run_tests=True))
     monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
-    monkeypatch.setattr(
-        "devr.cli.run_module",
-        lambda _venv, module, args, **_kwargs: calls.append((module, args)) or 0,
-    )
+    def _run_module(_venv, module: str, args: list[str], **_kwargs) -> int:
+        calls.append((module, args))
+        return 0
+
+    monkeypatch.setattr("devr.cli.run_module", _run_module)
 
     result = runner.invoke(app, ["check", "--no-tests"])
 
@@ -440,10 +443,11 @@ def test_check_fast_skips_pytest(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
     monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(run_tests=True))
     monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
-    monkeypatch.setattr(
-        "devr.cli.run_module",
-        lambda _venv, module, args, **_kwargs: calls.append((module, args)) or 0,
-    )
+    def _run_module(_venv, module: str, args: list[str], **_kwargs) -> int:
+        calls.append((module, args))
+        return 0
+
+    monkeypatch.setattr("devr.cli.run_module", _run_module)
 
     result = runner.invoke(app, ["check", "--fast"])
 
@@ -464,10 +468,11 @@ def test_check_changed_scopes_typecheck_targets(monkeypatch, tmp_path: Path) -> 
     monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(run_tests=False))
     monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
     monkeypatch.setattr("devr.cli._changed_files", lambda _: ["typed.py", "README.md"])
-    monkeypatch.setattr(
-        "devr.cli.run_module",
-        lambda _venv, module, args, **_kwargs: calls.append((module, args)) or 0,
-    )
+    def _run_module(_venv, module: str, args: list[str], **_kwargs) -> int:
+        calls.append((module, args))
+        return 0
+
+    monkeypatch.setattr("devr.cli.run_module", _run_module)
 
     result = runner.invoke(app, ["check", "--changed", "--fast"])
 
@@ -487,10 +492,11 @@ def test_check_changed_scopes_pyright_targets(monkeypatch, tmp_path: Path) -> No
     )
     monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
     monkeypatch.setattr("devr.cli._changed_files", lambda _: ["typed.py"])
-    monkeypatch.setattr(
-        "devr.cli.run_module",
-        lambda _venv, module, args, **_kwargs: calls.append((module, args)) or 0,
-    )
+    def _run_module(_venv, module: str, args: list[str], **_kwargs) -> int:
+        calls.append((module, args))
+        return 0
+
+    monkeypatch.setattr("devr.cli.run_module", _run_module)
 
     result = runner.invoke(app, ["check", "--changed", "--fast"])
 
@@ -508,10 +514,11 @@ def test_check_black_formatter_paths(monkeypatch, tmp_path: Path) -> None:
         lambda _: DevrConfig(formatter="black", typechecker="pyright", run_tests=False),
     )
     monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
-    monkeypatch.setattr(
-        "devr.cli.run_module",
-        lambda _venv, module, args, **_kwargs: calls.append((module, args)) or 0,
-    )
+    def _run_module(_venv, module: str, args: list[str], **_kwargs) -> int:
+        calls.append((module, args))
+        return 0
+
+    monkeypatch.setattr("devr.cli.run_module", _run_module)
 
     result = runner.invoke(app, ["check"])
 
@@ -610,10 +617,11 @@ def test_fix_runs_ruff_commands(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
     monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(formatter="ruff"))
     monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
-    monkeypatch.setattr(
-        "devr.cli.run_module",
-        lambda _venv, module, args, **_kwargs: calls.append((module, args)) or 0,
-    )
+    def _run_module(_venv, module: str, args: list[str], **_kwargs) -> int:
+        calls.append((module, args))
+        return 0
+
+    monkeypatch.setattr("devr.cli.run_module", _run_module)
 
     result = runner.invoke(app, ["fix"])
 
@@ -712,10 +720,11 @@ def test_check_changed_skips_deleted_python_files(monkeypatch, tmp_path: Path) -
     monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(run_tests=False))
     monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
     monkeypatch.setattr("devr.cli._changed_files", lambda _: ["deleted.py", "live.py"])
-    monkeypatch.setattr(
-        "devr.cli.run_module",
-        lambda _venv, module, args, **_kwargs: calls.append((module, args)) or 0,
-    )
+    def _run_module(_venv, module: str, args: list[str], **_kwargs) -> int:
+        calls.append((module, args))
+        return 0
+
+    monkeypatch.setattr("devr.cli.run_module", _run_module)
 
     result = runner.invoke(app, ["check", "--changed", "--fast"])
 
@@ -755,10 +764,11 @@ def test_check_fix_changed_scopes_ruff_targets(monkeypatch, tmp_path: Path) -> N
     monkeypatch.setattr(
         "devr.cli._staged_files", lambda _: ["a.py", "notes.md", "b.pyi"]
     )
-    monkeypatch.setattr(
-        "devr.cli.run_module",
-        lambda _venv, module, args, **_kwargs: calls.append((module, args)) or 0,
-    )
+    def _run_module(_venv, module: str, args: list[str], **_kwargs) -> int:
+        calls.append((module, args))
+        return 0
+
+    monkeypatch.setattr("devr.cli.run_module", _run_module)
 
     result = runner.invoke(app, ["check", "--fix", "--changed", "--staged", "--fast"])
 
