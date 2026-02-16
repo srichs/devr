@@ -170,54 +170,39 @@ def init(
 
 def _staged_files(root: Path) -> list[str]:
     """Return staged file paths from git, or an empty list on command failure."""
-    try:
-        proc = subprocess.run(
-            ["git", "diff", "--name-only", "--cached"],
-            cwd=str(root),
-            capture_output=True,
-            text=True,
-        )
-    except OSError:
-        return []
-    if proc.returncode != 0:
+    proc = _run_git(root, ["diff", "--name-only", "--cached"])
+    if proc is None:
         return []
     return [line.strip() for line in proc.stdout.splitlines() if line.strip()]
 
 
+def _run_git(root: Path, args: list[str]) -> subprocess.CompletedProcess[str] | None:
+    """Run a git command and return the completed process when successful."""
+    try:
+        proc = subprocess.run(
+            ["git", *args],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if proc.returncode != 0:
+        return None
+    return proc
+
+
 def _changed_files(root: Path) -> list[str]:
     """Return changed and untracked file paths from git, or an empty list on failure."""
-    try:
-        tracked = subprocess.run(
-            ["git", "diff", "--name-only", "HEAD"],
-            cwd=str(root),
-            capture_output=True,
-            text=True,
-        )
-    except OSError:
+    tracked = _run_git(root, ["diff", "--name-only", "HEAD"])
+    if tracked is None:
+        tracked = _run_git(root, ["diff", "--name-only"])
+    if tracked is None:
         return []
-    if tracked.returncode != 0:
-        try:
-            tracked = subprocess.run(
-                ["git", "diff", "--name-only"],
-                cwd=str(root),
-                capture_output=True,
-                text=True,
-            )
-        except OSError:
-            return []
-        if tracked.returncode != 0:
-            return []
 
-    try:
-        untracked = subprocess.run(
-            ["git", "ls-files", "--others", "--exclude-standard"],
-            cwd=str(root),
-            capture_output=True,
-            text=True,
-        )
-    except OSError:
-        return []
-    if untracked.returncode != 0:
+    untracked = _run_git(root, ["ls-files", "--others", "--exclude-standard"])
+    if untracked is None:
         return []
 
     combined = [
