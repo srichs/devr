@@ -425,7 +425,7 @@ def test_check_changed_uses_worktree_files_without_staged(
     monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
     monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(run_tests=False))
     monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
-    monkeypatch.setattr("devr.cli._changed_files", lambda _: ["x.py", "notes.md"])
+    monkeypatch.setattr("devr.cli._changed_files", lambda *_: ["x.py", "notes.md"])
 
     def _run_module(_venv, module: str, args: list[str], **_kwargs) -> int:
         calls.append((module, args))
@@ -449,7 +449,7 @@ def test_check_changed_skips_lint_when_no_python_files(
     monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
     monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(run_tests=False))
     monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
-    monkeypatch.setattr("devr.cli._changed_files", lambda _: ["README.md"])
+    monkeypatch.setattr("devr.cli._changed_files", lambda *_: ["README.md"])
 
     def _run_module(_venv, module: str, args: list[str], **_kwargs) -> int:
         calls.append((module, args))
@@ -477,7 +477,7 @@ def test_check_changed_runs_pytest_when_no_python_files(
         lambda _: DevrConfig(run_tests=True, coverage_branch=False, coverage_min=85),
     )
     monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
-    monkeypatch.setattr("devr.cli._changed_files", lambda _: ["README.md"])
+    monkeypatch.setattr("devr.cli._changed_files", lambda *_: ["README.md"])
 
     def _run_module(_venv, module: str, args: list[str], **_kwargs) -> int:
         calls.append((module, args))
@@ -552,7 +552,7 @@ def test_check_changed_scopes_typecheck_targets(monkeypatch, tmp_path: Path) -> 
     monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
     monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(run_tests=False))
     monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
-    monkeypatch.setattr("devr.cli._changed_files", lambda _: ["typed.py", "README.md"])
+    monkeypatch.setattr("devr.cli._changed_files", lambda *_: ["typed.py", "README.md"])
 
     def _run_module(_venv, module: str, args: list[str], **_kwargs) -> int:
         calls.append((module, args))
@@ -577,7 +577,7 @@ def test_check_changed_scopes_pyright_targets(monkeypatch, tmp_path: Path) -> No
         lambda _: DevrConfig(typechecker="pyright", run_tests=False),
     )
     monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
-    monkeypatch.setattr("devr.cli._changed_files", lambda _: ["typed.py"])
+    monkeypatch.setattr("devr.cli._changed_files", lambda *_: ["typed.py"])
 
     def _run_module(_venv, module: str, args: list[str], **_kwargs) -> int:
         calls.append((module, args))
@@ -768,6 +768,50 @@ def test_staged_files_returns_empty_when_git_is_unavailable(
     assert _staged_files(tmp_path) == []
 
 
+
+def test_is_git_repo_uses_cache(monkeypatch, tmp_path: Path) -> None:
+    calls: list[list[str]] = []
+
+    def _run_git(_root: Path, args: list[str]):
+        calls.append(args)
+        return SimpleNamespace(returncode=0, stdout="true\n")
+
+    monkeypatch.setattr("devr.cli._run_git", _run_git)
+
+    from devr.cli import _is_git_repo
+
+    cache: dict[str, bool] = {}
+    assert _is_git_repo(tmp_path, cache) is True
+    assert _is_git_repo(tmp_path, cache) is True
+    assert calls == [["rev-parse", "--is-inside-work-tree"]]
+
+
+def test_check_changed_reuses_cached_git_repo_detection(
+    monkeypatch, tmp_path: Path
+) -> None:
+    venv_path = (tmp_path / ".venv").resolve()
+    calls: list[list[str]] = []
+
+    monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
+    monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(run_tests=False))
+    monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
+    monkeypatch.setattr("devr.cli.run_module", lambda *_args, **_kwargs: 0)
+
+    def _run_git(_root: Path, args: list[str]):
+        calls.append(args)
+        return None
+
+    monkeypatch.setattr("devr.cli._run_git", _run_git)
+
+    result = runner.invoke(app, ["check", "--changed", "--fast"])
+
+    assert result.exit_code == 0
+    assert calls == [
+        ["diff", "--name-only", "HEAD"],
+        ["diff", "--name-only"],
+        ["diff", "--name-only", "--cached"],
+        ["rev-parse", "--is-inside-work-tree"],
+    ]
 def test_changed_files_collects_tracked_and_untracked(
     monkeypatch, tmp_path: Path
 ) -> None:
@@ -830,7 +874,7 @@ def test_check_changed_skips_deleted_python_files(monkeypatch, tmp_path: Path) -
     monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
     monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(run_tests=False))
     monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
-    monkeypatch.setattr("devr.cli._changed_files", lambda _: ["deleted.py", "live.py"])
+    monkeypatch.setattr("devr.cli._changed_files", lambda *_: ["deleted.py", "live.py"])
 
     def _run_module(_venv, module: str, args: list[str], **_kwargs) -> int:
         calls.append((module, args))
@@ -1016,7 +1060,7 @@ def test_check_changed_warns_when_git_state_unavailable(
     monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
     monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(run_tests=False))
     monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
-    monkeypatch.setattr("devr.cli._changed_files", lambda _: [])
+    monkeypatch.setattr("devr.cli._changed_files", lambda *_: [])
     monkeypatch.setattr(
         "devr.cli._run_git",
         lambda _root, _args: None,
