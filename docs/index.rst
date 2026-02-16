@@ -8,4 +8,5 @@ inside a project virtual environment.
    :maxdepth: 2
    :caption: Contents:
 
+   usage
    modules
