@@ -92,9 +92,9 @@ def test_security_runs_pip_audit_and_bandit(monkeypatch, tmp_path: Path) -> None
     assert "✅ devr security passed" in result.output
 
 
-
-
-def test_security_runs_bandit_even_when_pip_audit_fails(monkeypatch, tmp_path: Path) -> None:
+def test_security_runs_bandit_even_when_pip_audit_fails(
+    monkeypatch, tmp_path: Path
+) -> None:
     venv_path = (tmp_path / ".venv").resolve()
     calls: list[str] = []
 
@@ -126,6 +126,8 @@ def test_security_reports_multiple_failures(monkeypatch, tmp_path: Path) -> None
 
     assert result.exit_code == 1
     assert "Security checks failed: pip-audit, bandit" in result.output
+
+
 def test_bandit_excludes_include_detected_relative_venv(tmp_path: Path) -> None:
     from devr.cli import _bandit_excludes
 
@@ -798,9 +800,7 @@ def test_project_root_falls_back_to_cwd_when_no_markers(
     assert project_root() == plain.resolve()
 
 
-def test_staged_files_returns_empty_on_git_timeout(
-    monkeypatch, tmp_path: Path
-) -> None:
+def test_staged_files_returns_empty_on_git_timeout(monkeypatch, tmp_path: Path) -> None:
     def _raise(*_args, **_kwargs):
         raise subprocess.TimeoutExpired(cmd="git", timeout=10)
 
