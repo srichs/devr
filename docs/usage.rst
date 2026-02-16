@@ -158,6 +158,23 @@ This runs:
 
 If either tool fails, ``devr security`` exits non-zero.
 
+Doctor diagnostics
+------------------
+
+If environment setup or tool discovery is unclear, run:
+
+.. code-block:: bash
+
+   devr doctor
+
+This prints:
+
+- Detected project root
+- Active Python executable
+- Configured and resolved virtual environment paths
+- Which venv source is selected (configured, active, or fallback)
+- Whether a git repository is detected
+
 Configuration in ``pyproject.toml``
 -----------------------------------
 
@@ -246,3 +263,4 @@ Command reference (quick lookup)
 - ``devr check [--fix] [--staged --changed] [--fast] [--no-tests]``
 - ``devr fix``
 - ``devr security``
+- ``devr doctor``

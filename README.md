@@ -66,6 +66,7 @@ devr check
 - `devr check [--fix] [--staged --changed] [--fast] [--no-tests]`
 - `devr fix`
 - `devr security [--fail-fast]`
+- `devr doctor`
 
 ### Notes
 
@@ -75,6 +76,7 @@ devr check
 - `--fix` applies safe autofixes (ruff fix + formatting).
 - `devr security` runs `pip-audit` and `bandit` for dependency and code security scans.
 - `--fail-fast` stops the security scan after the first failing check.
+- `devr doctor` prints environment diagnostics (project root, Python path, venv resolution, and git detection) to help debug setup issues.
 
 ## Configuration
 

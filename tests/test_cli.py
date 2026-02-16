@@ -186,6 +186,38 @@ def test_security_fail_fast_reports_bandit_failure(monkeypatch, tmp_path: Path) 
     assert "Security checks failed: bandit" in result.output
 
 
+def test_doctor_reports_detected_venv(monkeypatch, tmp_path: Path) -> None:
+    venv_path = (tmp_path / ".venv").resolve()
+    venv_python_path = venv_path / "bin" / "python"
+    venv_python_path.parent.mkdir(parents=True)
+    venv_python_path.write_text("", encoding="utf-8")
+
+    monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
+    monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(venv_path=".venv"))
+    monkeypatch.setattr("devr.cli._run_git", lambda *_args, **_kwargs: None)
+
+    result = runner.invoke(app, ["doctor"])
+
+    assert result.exit_code == 0
+    assert "devr doctor" in result.output
+    assert f"Configured venv resolved: {venv_path}" in result.output
+    assert "Git repository detected: no" in result.output
+    assert f"Resolved venv: {venv_path}" in result.output
+    assert "Resolved venv source: configured" in result.output
+
+
+def test_doctor_reports_missing_venv_with_hint(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
+    monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(venv_path=".venv"))
+    monkeypatch.setattr("devr.cli._run_git", lambda *_args, **_kwargs: None)
+
+    result = runner.invoke(app, ["doctor"])
+
+    assert result.exit_code == 0
+    assert "Resolved venv: none" in result.output
+    assert "Hint: run 'devr init' to create a venv and install tools." in result.output
+
+
 def test_bandit_excludes_include_detected_relative_venv(tmp_path: Path) -> None:
     from devr.cli import _bandit_excludes
 
