@@ -55,6 +55,37 @@ run_tests = "not-a-bool"
     assert cfg.run_tests == defaults.run_tests
 
 
+def test_load_config_rejects_non_binary_integer_booleans(tmp_path: Path) -> None:
+    _write_pyproject(
+        tmp_path,
+        """
+[tool.devr]
+coverage_branch = 2
+run_tests = -1
+""",
+    )
+
+    cfg = load_config(tmp_path)
+    defaults = DevrConfig()
+
+    assert cfg.coverage_branch == defaults.coverage_branch
+    assert cfg.run_tests == defaults.run_tests
+
+
+def test_load_config_rejects_boolean_for_integer_fields(tmp_path: Path) -> None:
+    _write_pyproject(
+        tmp_path,
+        """
+[tool.devr]
+coverage_min = true
+""",
+    )
+
+    cfg = load_config(tmp_path)
+
+    assert cfg.coverage_min == DevrConfig().coverage_min
+
+
 def test_load_config_normalizes_string_values(tmp_path: Path) -> None:
     _write_pyproject(
         tmp_path,

@@ -38,7 +38,9 @@ def _parse_bool(value: Any, default: bool) -> bool:
             return False
         return default
     if isinstance(value, int):
-        return bool(value)
+        if value in {0, 1}:
+            return bool(value)
+        return default
     return default
 
 
@@ -50,6 +52,9 @@ def _parse_int(
     max_value: int | None = None,
 ) -> int:
     """Parse an integer and enforce optional inclusive min and max bounds."""
+    if isinstance(value, bool):
+        return default
+
     try:
         parsed = int(value)
     except (TypeError, ValueError):
