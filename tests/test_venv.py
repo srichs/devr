@@ -106,6 +106,7 @@ def test_run_py_calls_subprocess_with_venv_python(monkeypatch, tmp_path: Path) -
     venv_dir = tmp_path / ".venv"
 
     monkeypatch.setattr(venv, "venv_python", lambda _: Path("/tmp/python"))
+
     def _call(args: list[str], cwd: str) -> int:
         calls.append((args, cwd))
         return 7
