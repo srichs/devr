@@ -1053,4 +1053,7 @@ def test_check_warns_when_configured_venv_path_is_outside_root(
     result = runner.invoke(app, ["check", "--fast"])
 
     assert result.exit_code == 0
-    assert "Warning: configured venv_path '../shared-venv' resolves outside" in result.output
+    assert (
+        "Warning: configured venv_path '../shared-venv' resolves outside"
+        in result.output
+    )
