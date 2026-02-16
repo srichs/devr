@@ -21,9 +21,9 @@ This review focuses on reliability, UX, and maintainability for `devr`.
 4. **✅ Validate configured venv path more strictly.**
    - `devr` now warns when configured `venv_path` resolves outside the project root to reduce surprise and improve reproducibility.
 
-5. **Cache root/git detection during a single command execution.**
-   - Several code paths call git queries repeatedly.
-   - Small in-memory caching per command could reduce subprocess overhead and improve performance on large repos.
+5. **✅ Cache root/git detection during a single command execution.**
+   - `devr check --changed` now uses per-invocation git repo-state caching to avoid repeated `git rev-parse --is-inside-work-tree` calls.
+   - This reduces redundant subprocess work while keeping behavior unchanged when git is unavailable.
 
 6. **✅ Document expected tooling resolution behavior in README.**
    - README now documents venv/tooling resolution precedence: configured `venv_path`, active venv, then fallback directories (`.venv`, `venv`, `env`).
