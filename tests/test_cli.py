@@ -433,6 +433,28 @@ def test_check_no_tests_skips_pytest(monkeypatch, tmp_path: Path) -> None:
     assert "Skipping tests (--no-tests)." in result.output
 
 
+def test_check_fast_skips_pytest(monkeypatch, tmp_path: Path) -> None:
+    venv_path = (tmp_path / ".venv").resolve()
+    calls: list[tuple[str, list[str]]] = []
+
+    monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
+    monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(run_tests=True))
+    monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
+    monkeypatch.setattr(
+        "devr.cli.run_module",
+        lambda _venv, module, args, **_kwargs: calls.append((module, args)) or 0,
+    )
+
+    result = runner.invoke(app, ["check", "--fast"])
+
+    assert result.exit_code == 0
+    assert (
+        "pytest",
+        ["--cov=.", "--cov-branch", "--cov-report=term-missing", "--cov-fail-under=85"],
+    ) not in calls
+    assert "Skipping tests (--fast)." in result.output
+
+
 def test_check_changed_scopes_typecheck_targets(monkeypatch, tmp_path: Path) -> None:
     venv_path = (tmp_path / ".venv").resolve()
     calls: list[tuple[str, list[str]]] = []
