@@ -271,8 +271,16 @@ def _typecheck_targets(changed: bool, files: list[str]) -> list[str]:
 
 def _bandit_excludes(root: Path, configured_venv_path: str, venv_dir: Path) -> str:
     """Build a comma-separated exclusion list for bandit scans."""
+
+    def _normalize_exclude_path(value: str) -> str:
+        """Normalize exclusion paths for stable, cross-platform bandit args."""
+        normalized = value.strip().replace("\\", "/")
+        while normalized.startswith("./"):
+            normalized = normalized[2:]
+        return normalized.rstrip("/")
+
     excludes: list[str] = [
-        configured_venv_path,
+        _normalize_exclude_path(configured_venv_path),
         ".venv",
         "venv",
         "env",
@@ -288,7 +296,7 @@ def _bandit_excludes(root: Path, configured_venv_path: str, venv_dir: Path) -> s
     ]
     try:
         rel_venv = venv_dir.resolve().relative_to(root.resolve())
-        excludes.append(rel_venv.as_posix())
+        excludes.append(_normalize_exclude_path(rel_venv.as_posix()))
     except ValueError:
         # Active environment can be outside the project root; keep default exclusions.
         pass

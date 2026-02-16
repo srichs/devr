@@ -139,6 +139,14 @@ def test_bandit_excludes_include_detected_relative_venv(tmp_path: Path) -> None:
     )
 
 
+def test_bandit_excludes_normalize_configured_venv_path(tmp_path: Path) -> None:
+    from devr.cli import _bandit_excludes
+
+    excludes = _bandit_excludes(tmp_path, " ./custom\\venv/ ", tmp_path / "custom-venv")
+
+    assert excludes.startswith("custom/venv,.venv,venv,env")
+
+
 def test_security_exits_when_no_venv(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
     monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig())
