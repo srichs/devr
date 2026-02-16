@@ -234,6 +234,13 @@ def _run_or_exit(venv_dir: Path, module: str, args: list[str], root: Path) -> No
         raise typer.Exit(code=code)
 
 
+def _typecheck_targets(changed: bool, files: list[str]) -> list[str]:
+    """Return type-check targets, scoping to changed files when requested."""
+    if not changed:
+        return ["."]
+    return files
+
+
 @app.command()
 def check(
     fix: bool = typer.Option(
@@ -315,12 +322,18 @@ def check(
         raise typer.Exit(code=2)
 
     # 2) Type checking
+    typecheck_target = _typecheck_targets(changed, files)
+    if not typecheck_target:
+        typer.echo("No changed Python files detected; skipping type checks.")
+        typer.echo("✅ devr check passed")
+        return
+
     if cfg.typechecker == "mypy":
-        code = run_module(venv_dir, "mypy", ["."], cwd=root)
+        code = run_module(venv_dir, "mypy", typecheck_target, cwd=root)
         if code != 0:
             raise typer.Exit(code=code)
     elif cfg.typechecker == "pyright":
-        code = run_module(venv_dir, "pyright", ["."], cwd=root)
+        code = run_module(venv_dir, "pyright", typecheck_target, cwd=root)
         if code != 0:
             raise typer.Exit(code=code)
     else:

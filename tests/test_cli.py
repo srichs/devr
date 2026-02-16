@@ -302,8 +302,52 @@ def test_check_changed_skips_lint_when_no_python_files(
     result = runner.invoke(app, ["check", "--changed", "--fast"])
 
     assert result.exit_code == 0
-    assert calls == [("mypy", ["."])]
+    assert calls == []
     assert "No changed Python files detected; skipping lint/format." in result.output
+    assert "No changed Python files detected; skipping type checks." in result.output
+
+
+def test_check_changed_scopes_typecheck_targets(monkeypatch, tmp_path: Path) -> None:
+    venv_path = (tmp_path / ".venv").resolve()
+    calls: list[tuple[str, list[str]]] = []
+    (tmp_path / "typed.py").write_text("value: int = 1\n", encoding="utf-8")
+
+    monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
+    monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(run_tests=False))
+    monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
+    monkeypatch.setattr("devr.cli._changed_files", lambda _: ["typed.py", "README.md"])
+    monkeypatch.setattr(
+        "devr.cli.run_module",
+        lambda _venv, module, args, **_kwargs: calls.append((module, args)) or 0,
+    )
+
+    result = runner.invoke(app, ["check", "--changed", "--fast"])
+
+    assert result.exit_code == 0
+    assert calls[-1] == ("mypy", ["typed.py"])
+
+
+def test_check_changed_scopes_pyright_targets(monkeypatch, tmp_path: Path) -> None:
+    venv_path = (tmp_path / ".venv").resolve()
+    calls: list[tuple[str, list[str]]] = []
+    (tmp_path / "typed.py").write_text("value: int = 1\n", encoding="utf-8")
+
+    monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
+    monkeypatch.setattr(
+        "devr.cli.load_config",
+        lambda _: DevrConfig(typechecker="pyright", run_tests=False),
+    )
+    monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
+    monkeypatch.setattr("devr.cli._changed_files", lambda _: ["typed.py"])
+    monkeypatch.setattr(
+        "devr.cli.run_module",
+        lambda _venv, module, args, **_kwargs: calls.append((module, args)) or 0,
+    )
+
+    result = runner.invoke(app, ["check", "--changed", "--fast"])
+
+    assert result.exit_code == 0
+    assert calls[-1] == ("pyright", ["typed.py"])
 
 
 def test_check_black_formatter_paths(monkeypatch, tmp_path: Path) -> None:
