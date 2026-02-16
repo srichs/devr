@@ -397,6 +397,8 @@ def check(
             raise typer.Exit(code=code)
     elif no_tests:
         typer.echo("Skipping tests (--no-tests).")
+    elif fast:
+        typer.echo("Skipping tests (--fast).")
 
     typer.echo("✅ devr check passed")
 
