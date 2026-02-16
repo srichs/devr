@@ -30,7 +30,9 @@ def find_venv(project_root: Path, configured: str | None) -> Path | None:
     # If user is already running inside a venv, use it.
     # (Useful when devs activate venv manually.)
     if is_inside_venv():
-        return Path(sys.prefix)
+        active = Path(sys.prefix)
+        if venv_python(active).exists():
+            return active
 
     for name in (".venv", "venv", "env"):
         p = (project_root / name).resolve()
