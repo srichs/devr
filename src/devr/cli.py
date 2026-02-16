@@ -59,6 +59,22 @@ def project_root() -> Path:
     return cwd
 
 
+def _warn_if_venv_path_outside_root(root: Path, configured_venv_path: str) -> None:
+    """Warn when configured venv path resolves outside the current project root."""
+    configured_path = Path(configured_venv_path).expanduser()
+    resolved = (
+        configured_path.resolve()
+        if configured_path.is_absolute()
+        else (root / configured_path).resolve()
+    )
+    try:
+        resolved.relative_to(root.resolve())
+    except ValueError:
+        typer.echo(
+            f"Warning: configured venv_path '{configured_venv_path}' resolves outside project root ({root})."
+        )
+
+
 def ensure_toolchain(venv_dir: Path, root: Path) -> None:
     """Install and/or upgrade required development tools inside ``venv_dir``."""
     # Upgrade pip basics
@@ -146,6 +162,7 @@ def init(
     """
     root = project_root()
     cfg = load_config(root)
+    _warn_if_venv_path_outside_root(root, cfg.venv_path)
 
     venv_dir = find_venv(root, cfg.venv_path)
     if venv_dir is None:
@@ -336,6 +353,7 @@ def check(
     """
     root = project_root()
     cfg = load_config(root)
+    _warn_if_venv_path_outside_root(root, cfg.venv_path)
 
     if staged and not changed:
         typer.echo("Warning: --staged has no effect without --changed.")
@@ -468,6 +486,7 @@ def fix() -> None:
     """Apply configured lint fixes and formatting in the active project venv."""
     root = project_root()
     cfg = load_config(root)
+    _warn_if_venv_path_outside_root(root, cfg.venv_path)
     venv_dir = find_venv(root, cfg.venv_path)
     if venv_dir is None:
         typer.echo("No venv found. Run: devr init")
@@ -497,6 +516,7 @@ def security(
     """Run dependency and static-analysis security checks in the project venv."""
     root = project_root()
     cfg = load_config(root)
+    _warn_if_venv_path_outside_root(root, cfg.venv_path)
     venv_dir = find_venv(root, cfg.venv_path)
     if venv_dir is None:
         typer.echo("No venv found. Run: devr init")

@@ -18,8 +18,8 @@ This review focuses on reliability, UX, and maintainability for `devr`.
 
 ## Medium-impact improvements
 
-4. **Validate configured venv path more strictly.**
-   - `venv_path` accepts any non-empty string. Consider warning if it resolves outside project root, since this can surprise users and complicate reproducibility.
+4. **✅ Validate configured venv path more strictly.**
+   - `devr` now warns when configured `venv_path` resolves outside the project root to reduce surprise and improve reproducibility.
 
 5. **Cache root/git detection during a single command execution.**
    - Several code paths call git queries repeatedly.
