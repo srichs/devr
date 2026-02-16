@@ -220,13 +220,17 @@ def _is_git_repo(root: Path, cache: Optional[dict[str, bool]] = None) -> bool:
     if cache is not None and cache_key in cache:
         return cache[cache_key]
 
-    inside_work_tree = _run_git(root, ["rev-parse", "--is-inside-work-tree"]) is not None
+    inside_work_tree = (
+        _run_git(root, ["rev-parse", "--is-inside-work-tree"]) is not None
+    )
     if cache is not None:
         cache[cache_key] = inside_work_tree
     return inside_work_tree
 
 
-def _changed_files(root: Path, git_repo_cache: Optional[dict[str, bool]] = None) -> list[str]:
+def _changed_files(
+    root: Path, git_repo_cache: Optional[dict[str, bool]] = None
+) -> list[str]:
     """Return changed and untracked file paths from git, or an empty list on failure."""
     tracked = _run_git(root, ["diff", "--name-only", "HEAD"])
     if tracked is None:

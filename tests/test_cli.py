@@ -768,7 +768,6 @@ def test_staged_files_returns_empty_when_git_is_unavailable(
     assert _staged_files(tmp_path) == []
 
 
-
 def test_is_git_repo_uses_cache(monkeypatch, tmp_path: Path) -> None:
     calls: list[list[str]] = []
 
@@ -812,6 +811,8 @@ def test_check_changed_reuses_cached_git_repo_detection(
         ["diff", "--name-only", "--cached"],
         ["rev-parse", "--is-inside-work-tree"],
     ]
+
+
 def test_changed_files_collects_tracked_and_untracked(
     monkeypatch, tmp_path: Path
 ) -> None:
