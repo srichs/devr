@@ -733,6 +733,28 @@ def test_existing_files_filters_missing_paths(tmp_path: Path) -> None:
     assert _existing_files(tmp_path, ["keep.py", "gone.py"]) == ["keep.py"]
 
 
+def test_existing_files_skips_paths_outside_project_root(tmp_path: Path) -> None:
+    from devr.cli import _existing_files
+
+    outside = tmp_path.parent / "outside.py"
+    outside.write_text("print('outside')\n", encoding="utf-8")
+    inside = tmp_path / "inside.py"
+    inside.write_text("print('inside')\n", encoding="utf-8")
+
+    assert _existing_files(tmp_path, ["../outside.py", "inside.py"]) == ["inside.py"]
+
+
+def test_existing_files_skips_directories_named_like_python_files(
+    tmp_path: Path,
+) -> None:
+    from devr.cli import _existing_files
+
+    pseudo_file_dir = tmp_path / "pkg.py"
+    pseudo_file_dir.mkdir()
+
+    assert _existing_files(tmp_path, ["pkg.py"]) == []
+
+
 def test_check_changed_skips_deleted_python_files(monkeypatch, tmp_path: Path) -> None:
     venv_path = (tmp_path / ".venv").resolve()
     calls: list[tuple[str, list[str]]] = []

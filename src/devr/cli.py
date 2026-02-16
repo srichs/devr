@@ -239,11 +239,18 @@ def _filter_py(files: list[str]) -> list[str]:
 
 def _existing_files(root: Path, files: list[str]) -> list[str]:
     """Return only file paths that currently exist under ``root``."""
+    root_resolved = root.resolve()
     existing: list[str] = []
     for file in files:
         candidate = Path(file)
         path = candidate if candidate.is_absolute() else root / candidate
-        if path.exists():
+        try:
+            resolved = path.resolve()
+            resolved.relative_to(root_resolved)
+        except ValueError:
+            continue
+
+        if resolved.is_file():
             existing.append(file)
     return existing
 
