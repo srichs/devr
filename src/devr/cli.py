@@ -201,8 +201,23 @@ def _changed_files(root: Path) -> list[str]:
     """Return changed and untracked file paths from git, or an empty list on failure."""
     tracked = _run_git(root, ["diff", "--name-only", "HEAD"])
     if tracked is None:
-        tracked = _run_git(root, ["diff", "--name-only"])
-    if tracked is None:
+        unstaged = _run_git(root, ["diff", "--name-only"])
+        staged = _run_git(root, ["diff", "--name-only", "--cached"])
+        if unstaged is None and staged is None:
+            return []
+        fallback_lines = []
+        if unstaged is not None:
+            fallback_lines.extend(unstaged.stdout.splitlines())
+        if staged is not None:
+            fallback_lines.extend(staged.stdout.splitlines())
+        tracked_lines = [line.strip() for line in fallback_lines if line.strip()]
+    else:
+        tracked_lines = tracked.stdout.splitlines()
+
+    if (
+        not tracked_lines
+        and _run_git(root, ["rev-parse", "--is-inside-work-tree"]) is None
+    ):
         return []
 
     untracked = _run_git(root, ["ls-files", "--others", "--exclude-standard"])
@@ -212,9 +227,7 @@ def _changed_files(root: Path) -> list[str]:
         untracked_lines = untracked.stdout.splitlines()
 
     combined = [
-        line.strip()
-        for line in [*tracked.stdout.splitlines(), *untracked_lines]
-        if line.strip()
+        line.strip() for line in [*tracked_lines, *untracked_lines] if line.strip()
     ]
     return list(dict.fromkeys(combined))
 
