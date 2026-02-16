@@ -43,7 +43,9 @@ def test_check_changed_in_temp_git_repo_scopes_python_targets(
     _git(tmp_path, "commit", "-m", "initial")
 
     tracked_py.write_text("value = 2\n", encoding="utf-8")
-    (tmp_path / "new_module.pyi").write_text("def run() -> None: ...\n", encoding="utf-8")
+    (tmp_path / "new_module.pyi").write_text(
+        "def run() -> None: ...\n", encoding="utf-8"
+    )
     (tmp_path / "todo.txt").write_text("todo\n", encoding="utf-8")
 
     calls: list[tuple[str, list[str]]] = []
@@ -69,7 +71,9 @@ def test_init_in_temp_git_repo_writes_precommit_and_installs_hook(
     monkeypatch, tmp_path: Path
 ) -> None:
     _init_git_repo(tmp_path)
-    (tmp_path / "pyproject.toml").write_text("[project]\nname='sample'\n", encoding="utf-8")
+    (tmp_path / "pyproject.toml").write_text(
+        "[project]\nname='sample'\n", encoding="utf-8"
+    )
 
     calls: list[tuple[str, list[str]]] = []
 
