@@ -548,6 +548,19 @@ def test_staged_files_collects_paths(monkeypatch, tmp_path: Path) -> None:
     assert _staged_files(tmp_path) == ["a.py", "b.pyi"]
 
 
+def test_staged_files_returns_empty_when_git_is_unavailable(
+    monkeypatch, tmp_path: Path
+) -> None:
+    def _raise(*_args, **_kwargs):
+        raise FileNotFoundError
+
+    monkeypatch.setattr("devr.cli.subprocess.run", _raise)
+
+    from devr.cli import _staged_files
+
+    assert _staged_files(tmp_path) == []
+
+
 def test_changed_files_collects_tracked_and_untracked(
     monkeypatch, tmp_path: Path
 ) -> None:
@@ -678,3 +691,16 @@ def test_changed_files_falls_back_when_head_missing(
     from devr.cli import _changed_files
 
     assert _changed_files(tmp_path) == ["tracked.py", "new.py"]
+
+
+def test_changed_files_returns_empty_when_git_is_unavailable(
+    monkeypatch, tmp_path: Path
+) -> None:
+    def _raise(*_args, **_kwargs):
+        raise FileNotFoundError
+
+    monkeypatch.setattr("devr.cli.subprocess.run", _raise)
+
+    from devr.cli import _changed_files
+
+    assert _changed_files(tmp_path) == []
