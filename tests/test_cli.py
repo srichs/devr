@@ -345,6 +345,35 @@ def test_check_changed_skips_lint_when_no_python_files(
     assert "No changed Python files detected; skipping type checks." in result.output
 
 
+def test_check_changed_runs_pytest_when_no_python_files(
+    monkeypatch, tmp_path: Path
+) -> None:
+    venv_path = (tmp_path / ".venv").resolve()
+    calls: list[tuple[str, list[str]]] = []
+
+    monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
+    monkeypatch.setattr(
+        "devr.cli.load_config",
+        lambda _: DevrConfig(run_tests=True, coverage_branch=False, coverage_min=85),
+    )
+    monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
+    monkeypatch.setattr("devr.cli._changed_files", lambda _: ["README.md"])
+    monkeypatch.setattr(
+        "devr.cli.run_module",
+        lambda _venv, module, args, **_kwargs: calls.append((module, args)) or 0,
+    )
+
+    result = runner.invoke(app, ["check", "--changed"])
+
+    assert result.exit_code == 0
+    assert calls == [
+        (
+            "pytest",
+            ["--cov=.", "--cov-report=term-missing", "--cov-fail-under=85"],
+        )
+    ]
+
+
 def test_check_changed_scopes_typecheck_targets(monkeypatch, tmp_path: Path) -> None:
     venv_path = (tmp_path / ".venv").resolve()
     calls: list[tuple[str, list[str]]] = []

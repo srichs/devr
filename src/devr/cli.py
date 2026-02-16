@@ -372,20 +372,20 @@ def check(
     typecheck_target = _typecheck_targets(changed, files)
     if not typecheck_target:
         typer.echo("No changed Python files detected; skipping type checks.")
-        typer.echo("✅ devr check passed")
-        return
-
-    if cfg.typechecker == "mypy":
-        code = run_module(venv_dir, "mypy", typecheck_target, cwd=root)
-        if code != 0:
-            raise typer.Exit(code=code)
-    elif cfg.typechecker == "pyright":
-        code = run_module(venv_dir, "pyright", typecheck_target, cwd=root)
-        if code != 0:
-            raise typer.Exit(code=code)
     else:
-        typer.echo(f"Unknown typechecker: {cfg.typechecker} (expected mypy or pyright)")
-        raise typer.Exit(code=2)
+        if cfg.typechecker == "mypy":
+            code = run_module(venv_dir, "mypy", typecheck_target, cwd=root)
+            if code != 0:
+                raise typer.Exit(code=code)
+        elif cfg.typechecker == "pyright":
+            code = run_module(venv_dir, "pyright", typecheck_target, cwd=root)
+            if code != 0:
+                raise typer.Exit(code=code)
+        else:
+            typer.echo(
+                f"Unknown typechecker: {cfg.typechecker} (expected mypy or pyright)"
+            )
+            raise typer.Exit(code=2)
 
     # 3) Tests + coverage
     if cfg.run_tests and not fast:
