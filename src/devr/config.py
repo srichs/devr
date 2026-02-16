@@ -54,6 +54,9 @@ def _parse_int(
     """Parse an integer and enforce optional inclusive min and max bounds."""
     if isinstance(value, bool):
         return default
+    if isinstance(value, float):
+        # Avoid silently truncating values like 85.9 to 85.
+        return default
 
     try:
         parsed = int(value)

@@ -86,6 +86,20 @@ coverage_min = true
     assert cfg.coverage_min == DevrConfig().coverage_min
 
 
+def test_load_config_rejects_float_for_integer_fields(tmp_path: Path) -> None:
+    _write_pyproject(
+        tmp_path,
+        """
+[tool.devr]
+coverage_min = 85.5
+""",
+    )
+
+    cfg = load_config(tmp_path)
+
+    assert cfg.coverage_min == DevrConfig().coverage_min
+
+
 def test_load_config_normalizes_string_values(tmp_path: Path) -> None:
     _write_pyproject(
         tmp_path,
