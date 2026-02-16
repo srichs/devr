@@ -92,6 +92,17 @@ run_tests = true
 
 If values are omitted or invalid, `devr` falls back to safe defaults.
 
+### Virtual environment resolution order
+
+When `devr` needs to run tooling, it resolves the venv in this order:
+
+1. `tool.devr.venv_path` from `pyproject.toml` (when it points to a valid venv).
+2. The currently active virtual environment (when `devr` is invoked from inside one).
+3. Project-local fallback directories: `.venv`, then `venv`, then `env`.
+
+This is the same resolution order used by `devr init`, `devr check`, `devr fix`, and
+`devr security`.
+
 ## Default toolchain
 
 `devr init` installs:

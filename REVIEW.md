@@ -25,8 +25,8 @@ This review focuses on reliability, UX, and maintainability for `devr`.
    - Several code paths call git queries repeatedly.
    - Small in-memory caching per command could reduce subprocess overhead and improve performance on large repos.
 
-6. **Document expected tooling resolution behavior in README.**
-   - Clarify precedence between configured venv, active venv, and fallback directories (`.venv`, `venv`, `env`) to reduce onboarding confusion.
+6. **✅ Document expected tooling resolution behavior in README.**
+   - README now documents venv/tooling resolution precedence: configured `venv_path`, active venv, then fallback directories (`.venv`, `venv`, `env`).
 
 ## Nice-to-have improvements
 
