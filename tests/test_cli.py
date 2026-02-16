@@ -1029,3 +1029,28 @@ def test_check_changed_warns_when_git_state_unavailable(
         "Warning: unable to read git state; --changed mode found no file targets."
         in result.output
     )
+
+
+def test_warn_if_venv_path_outside_root_ignores_in_project_path(tmp_path: Path) -> None:
+    from devr.cli import _warn_if_venv_path_outside_root
+
+    _warn_if_venv_path_outside_root(tmp_path, ".venv")
+
+
+def test_check_warns_when_configured_venv_path_is_outside_root(
+    monkeypatch, tmp_path: Path
+) -> None:
+    outside_venv = (tmp_path.parent / "shared-venv").resolve()
+
+    monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
+    monkeypatch.setattr(
+        "devr.cli.load_config",
+        lambda _: DevrConfig(venv_path="../shared-venv", run_tests=False),
+    )
+    monkeypatch.setattr("devr.cli.find_venv", lambda *_: outside_venv)
+    monkeypatch.setattr("devr.cli.run_module", lambda *_args, **_kwargs: 0)
+
+    result = runner.invoke(app, ["check", "--fast"])
+
+    assert result.exit_code == 0
+    assert "Warning: configured venv_path '../shared-venv' resolves outside" in result.output
