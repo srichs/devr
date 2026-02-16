@@ -794,6 +794,22 @@ def test_changed_files_returns_empty_when_git_is_unavailable(
     assert _changed_files(tmp_path) == []
 
 
+def test_changed_files_keeps_tracked_when_untracked_lookup_fails(
+    monkeypatch, tmp_path: Path
+) -> None:
+    responses = [
+        SimpleNamespace(returncode=0, stdout="tracked.py\n"),
+        SimpleNamespace(returncode=1, stdout=""),
+    ]
+    monkeypatch.setattr(
+        "devr.cli.subprocess.run", lambda *args, **kwargs: responses.pop(0)
+    )
+
+    from devr.cli import _changed_files
+
+    assert _changed_files(tmp_path) == ["tracked.py"]
+
+
 def test_project_root_prefers_nearest_pyproject(monkeypatch, tmp_path: Path) -> None:
     project = tmp_path / "repo"
     nested = project / "src" / "pkg"

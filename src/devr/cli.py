@@ -203,11 +203,13 @@ def _changed_files(root: Path) -> list[str]:
 
     untracked = _run_git(root, ["ls-files", "--others", "--exclude-standard"])
     if untracked is None:
-        return []
+        untracked_lines: list[str] = []
+    else:
+        untracked_lines = untracked.stdout.splitlines()
 
     combined = [
         line.strip()
-        for line in [*tracked.stdout.splitlines(), *untracked.stdout.splitlines()]
+        for line in [*tracked.stdout.splitlines(), *untracked_lines]
         if line.strip()
     ]
     return list(dict.fromkeys(combined))
