@@ -165,12 +165,15 @@ def init(
 
 def _staged_files(root: Path) -> list[str]:
     """Return staged file paths from git, or an empty list on command failure."""
-    proc = subprocess.run(
-        ["git", "diff", "--name-only", "--cached"],
-        cwd=str(root),
-        capture_output=True,
-        text=True,
-    )
+    try:
+        proc = subprocess.run(
+            ["git", "diff", "--name-only", "--cached"],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+        )
+    except OSError:
+        return []
     if proc.returncode != 0:
         return []
     return [line.strip() for line in proc.stdout.splitlines() if line.strip()]
@@ -178,28 +181,37 @@ def _staged_files(root: Path) -> list[str]:
 
 def _changed_files(root: Path) -> list[str]:
     """Return changed and untracked file paths from git, or an empty list on failure."""
-    tracked = subprocess.run(
-        ["git", "diff", "--name-only", "HEAD"],
-        cwd=str(root),
-        capture_output=True,
-        text=True,
-    )
-    if tracked.returncode != 0:
+    try:
         tracked = subprocess.run(
-            ["git", "diff", "--name-only"],
+            ["git", "diff", "--name-only", "HEAD"],
             cwd=str(root),
             capture_output=True,
             text=True,
         )
+    except OSError:
+        return []
+    if tracked.returncode != 0:
+        try:
+            tracked = subprocess.run(
+                ["git", "diff", "--name-only"],
+                cwd=str(root),
+                capture_output=True,
+                text=True,
+            )
+        except OSError:
+            return []
         if tracked.returncode != 0:
             return []
 
-    untracked = subprocess.run(
-        ["git", "ls-files", "--others", "--exclude-standard"],
-        cwd=str(root),
-        capture_output=True,
-        text=True,
-    )
+    try:
+        untracked = subprocess.run(
+            ["git", "ls-files", "--others", "--exclude-standard"],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+        )
+    except OSError:
+        return []
     if untracked.returncode != 0:
         return []
 
