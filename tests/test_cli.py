@@ -223,6 +223,8 @@ def test_init_exits_when_venv_python_missing(monkeypatch, tmp_path: Path) -> Non
 def test_check_changed_staged_scopes_targets(monkeypatch, tmp_path: Path) -> None:
     venv_path = (tmp_path / ".venv").resolve()
     calls: list[tuple[str, list[str]]] = []
+    (tmp_path / "a.py").write_text("print('a')\n", encoding="utf-8")
+    (tmp_path / "c.pyi").write_text("def f() -> None: ...\n", encoding="utf-8")
 
     monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
     monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(run_tests=False))
@@ -247,6 +249,7 @@ def test_check_changed_uses_worktree_files_without_staged(
 ) -> None:
     venv_path = (tmp_path / ".venv").resolve()
     calls: list[tuple[str, list[str]]] = []
+    (tmp_path / "x.py").write_text("print('x')\n", encoding="utf-8")
 
     monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
     monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(run_tests=False))
@@ -472,6 +475,39 @@ def test_filter_py_includes_only_python_files() -> None:
     assert _filter_py(["a.py", "b.pyi", "README.md"]) == ["a.py", "b.pyi"]
 
 
+def test_existing_files_filters_missing_paths(tmp_path: Path) -> None:
+    from devr.cli import _existing_files
+
+    keep = tmp_path / "keep.py"
+    keep.write_text("print('ok')\n", encoding="utf-8")
+
+    assert _existing_files(tmp_path, ["keep.py", "gone.py"]) == ["keep.py"]
+
+
+def test_check_changed_skips_deleted_python_files(
+    monkeypatch, tmp_path: Path
+) -> None:
+    venv_path = (tmp_path / ".venv").resolve()
+    calls: list[tuple[str, list[str]]] = []
+
+    (tmp_path / "live.py").write_text("print('ok')\n", encoding="utf-8")
+
+    monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
+    monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(run_tests=False))
+    monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
+    monkeypatch.setattr("devr.cli._changed_files", lambda _: ["deleted.py", "live.py"])
+    monkeypatch.setattr(
+        "devr.cli.run_module",
+        lambda _venv, module, args, **_kwargs: calls.append((module, args)) or 0,
+    )
+
+    result = runner.invoke(app, ["check", "--changed", "--fast"])
+
+    assert result.exit_code == 0
+    assert calls[0] == ("ruff", ["check", "live.py"])
+    assert calls[1] == ("ruff", ["format", "--check", "live.py"])
+
+
 def test_check_fix_exits_when_ruff_fix_fails(monkeypatch, tmp_path: Path) -> None:
     venv_path = (tmp_path / ".venv").resolve()
 
@@ -494,6 +530,8 @@ def test_check_fix_exits_when_ruff_fix_fails(monkeypatch, tmp_path: Path) -> Non
 def test_check_fix_changed_scopes_ruff_targets(monkeypatch, tmp_path: Path) -> None:
     venv_path = (tmp_path / ".venv").resolve()
     calls: list[tuple[str, list[str]]] = []
+    (tmp_path / "a.py").write_text("print('a')\n", encoding="utf-8")
+    (tmp_path / "b.pyi").write_text("def f() -> None: ...\n", encoding="utf-8")
 
     monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
     monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(run_tests=False))
