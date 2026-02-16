@@ -44,12 +44,30 @@ def test_find_venv_prefers_configured_path(tmp_path: Path) -> None:
 def test_find_venv_uses_active_venv_when_configured_missing(
     monkeypatch, tmp_path: Path
 ) -> None:
+    active_bin = tmp_path / ".active-venv" / "bin"
+    active_bin.mkdir(parents=True)
+    (active_bin / "python").write_text("", encoding="utf-8")
+
     monkeypatch.setattr(venv, "is_inside_venv", lambda: True)
     monkeypatch.setattr(venv.sys, "prefix", str(tmp_path / ".active-venv"))
 
     resolved = venv.find_venv(tmp_path, "missing")
 
     assert resolved == Path(venv.sys.prefix)
+
+
+def test_find_venv_skips_missing_active_venv_and_uses_defaults(
+    monkeypatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr(venv, "is_inside_venv", lambda: True)
+    monkeypatch.setattr(venv.sys, "prefix", str(tmp_path / ".missing-active"))
+    fallback = tmp_path / ".venv" / "bin"
+    fallback.mkdir(parents=True)
+    (fallback / "python").write_text("", encoding="utf-8")
+
+    resolved = venv.find_venv(tmp_path, "missing")
+
+    assert resolved == (tmp_path / ".venv").resolve()
 
 
 def test_find_venv_falls_back_to_default_names(monkeypatch, tmp_path: Path) -> None:
