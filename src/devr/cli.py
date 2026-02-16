@@ -88,7 +88,13 @@ def install_project(venv_dir: Path, root: Path) -> None:
         return
 
     if reqs.exists():
-        run_module(venv_dir, "pip", ["install", "-r", "requirements.txt"], cwd=root)
+        code = run_module(
+            venv_dir, "pip", ["install", "-r", "requirements.txt"], cwd=root
+        )
+        if code != 0:
+            typer.echo(
+                "Warning: requirements install failed; continuing without installed project dependencies."
+            )
         return
 
     typer.echo(

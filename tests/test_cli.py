@@ -117,6 +117,19 @@ def test_install_project_uses_requirements_file(monkeypatch, tmp_path: Path) -> 
     assert calls == [["install", "-r", "requirements.txt"]]
 
 
+def test_install_project_warns_when_requirements_install_fails(
+    monkeypatch, tmp_path: Path, capsys
+) -> None:
+    (tmp_path / "requirements.txt").write_text("pytest\n", encoding="utf-8")
+
+    monkeypatch.setattr("devr.cli.run_module", lambda *_args, **_kwargs: 1)
+
+    install_project(tmp_path / ".venv", tmp_path)
+
+    out = capsys.readouterr().out
+    assert "Warning: requirements install failed" in out
+
+
 def test_install_project_warns_when_both_install_attempts_fail(
     monkeypatch, tmp_path: Path, capsys
 ) -> None:
