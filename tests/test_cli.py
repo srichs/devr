@@ -484,9 +484,7 @@ def test_existing_files_filters_missing_paths(tmp_path: Path) -> None:
     assert _existing_files(tmp_path, ["keep.py", "gone.py"]) == ["keep.py"]
 
 
-def test_check_changed_skips_deleted_python_files(
-    monkeypatch, tmp_path: Path
-) -> None:
+def test_check_changed_skips_deleted_python_files(monkeypatch, tmp_path: Path) -> None:
     venv_path = (tmp_path / ".venv").resolve()
     calls: list[tuple[str, list[str]]] = []
 
