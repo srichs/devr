@@ -65,7 +65,7 @@ devr check
 - `devr init [--python python3.12]`
 - `devr check [--fix] [--staged --changed] [--fast] [--no-tests]`
 - `devr fix`
-- `devr security`
+- `devr security [--fail-fast]`
 
 ### Notes
 
@@ -74,6 +74,7 @@ devr check
 - `--no-tests` always skips tests, even when configured to run.
 - `--fix` applies safe autofixes (ruff fix + formatting).
 - `devr security` runs `pip-audit` and `bandit` for dependency and code security scans.
+- `--fail-fast` stops the security scan after the first failing check.
 
 ## Configuration
 
