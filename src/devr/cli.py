@@ -84,7 +84,9 @@ def _resolve_configured_venv_path(root: Path, configured_venv_path: str) -> Path
     return (root / configured_path).resolve()
 
 
-def _detect_venv_resolution(root: Path, configured_venv_path: str) -> tuple[Path | None, str]:
+def _detect_venv_resolution(
+    root: Path, configured_venv_path: str
+) -> tuple[Path | None, str]:
     """Detect which venv path would be selected and why."""
     configured = _resolve_configured_venv_path(root, configured_venv_path)
     if venv_python(configured).exists():
