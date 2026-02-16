@@ -30,9 +30,9 @@ This review focuses on reliability, UX, and maintainability for `devr`.
 
 ## Nice-to-have improvements
 
-7. **Add a `devr doctor` command.**
-   - Could report Python executable path, resolved venv, detected config, and missing tools.
-   - Useful for support/debugging when users report environment issues.
+7. **✅ Add a `devr doctor` command.**
+   - Added a `devr doctor` command that reports project root, active Python executable, configured and resolved venv paths, selected venv source, and git repository detection.
+   - Includes a helpful setup hint when no virtual environment can be resolved.
 
 8. **Add shell-completion support toggle in docs.**
    - CLI currently disables completion; if intentionally off, document why. If not, consider enabling Typer completion install instructions.

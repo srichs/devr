@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Optional
@@ -11,7 +12,7 @@ import typer
 
 from .config import load_config
 from .templates import DEFAULT_TOOLCHAIN, PRECOMMIT_LOCAL_HOOK_YAML
-from .venv import create_venv, find_venv, run_module, venv_python
+from .venv import create_venv, find_venv, is_inside_venv, run_module, venv_python
 
 app = typer.Typer(
     add_completion=False,
@@ -73,6 +74,33 @@ def _warn_if_venv_path_outside_root(root: Path, configured_venv_path: str) -> No
         typer.echo(
             f"Warning: configured venv_path '{configured_venv_path}' resolves outside project root ({root})."
         )
+
+
+def _resolve_configured_venv_path(root: Path, configured_venv_path: str) -> Path:
+    """Resolve the configured venv path relative to ``root`` when needed."""
+    configured_path = Path(configured_venv_path).expanduser()
+    if configured_path.is_absolute():
+        return configured_path.resolve()
+    return (root / configured_path).resolve()
+
+
+def _detect_venv_resolution(root: Path, configured_venv_path: str) -> tuple[Path | None, str]:
+    """Detect which venv path would be selected and why."""
+    configured = _resolve_configured_venv_path(root, configured_venv_path)
+    if venv_python(configured).exists():
+        return configured, "configured"
+
+    if is_inside_venv():
+        active = Path(sys.prefix).resolve()
+        if venv_python(active).exists():
+            return active, "active"
+
+    for name in (".venv", "venv", "env"):
+        candidate = (root / name).resolve()
+        if venv_python(candidate).exists():
+            return candidate, f"fallback ({name})"
+
+    return None, "none"
 
 
 def ensure_toolchain(venv_dir: Path, root: Path) -> None:
@@ -611,3 +639,29 @@ def security(
         raise typer.Exit(code=1)
 
     typer.echo("✅ devr security passed")
+
+
+@app.command()
+def doctor() -> None:
+    """Print environment diagnostics to help debug devr setup issues."""
+    root = project_root()
+    cfg = load_config(root)
+    configured_venv = _resolve_configured_venv_path(root, cfg.venv_path)
+    selected_venv, selected_source = _detect_venv_resolution(root, cfg.venv_path)
+    git_detected = _is_git_repo(root)
+
+    typer.echo("devr doctor")
+    typer.echo(f"Project root: {root}")
+    typer.echo(f"Python executable: {Path(sys.executable).resolve()}")
+    typer.echo(f"Configured venv_path: {cfg.venv_path}")
+    typer.echo(f"Configured venv resolved: {configured_venv}")
+    typer.echo(f"Git repository detected: {'yes' if git_detected else 'no'}")
+
+    if selected_venv is None:
+        typer.echo("Resolved venv: none")
+        typer.echo("Hint: run 'devr init' to create a venv and install tools.")
+        return
+
+    typer.echo(f"Resolved venv: {selected_venv}")
+    typer.echo(f"Resolved venv source: {selected_source}")
+    typer.echo(f"Resolved venv python: {venv_python(selected_venv)}")
