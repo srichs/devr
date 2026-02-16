@@ -62,7 +62,7 @@ devr check
 ## Commands
 
 - `devr init [--python python3.12]`
-- `devr check [--fix] [--staged --changed] [--fast]`
+- `devr check [--fix] [--staged --changed] [--fast] [--no-tests]`
 - `devr fix`
 - `devr security`
 
@@ -70,6 +70,7 @@ devr check
 
 - `--changed --staged` scopes lint/format checks to staged Python files.
 - `--fast` skips tests.
+- `--no-tests` always skips tests, even when configured to run.
 - `--fix` applies safe autofixes (ruff fix + formatting).
 - `devr security` runs `pip-audit` and `bandit` for dependency and code security scans.
 

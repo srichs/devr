@@ -286,6 +286,9 @@ def check(
     fast: bool = typer.Option(
         False, "--fast", help="Skip slow steps (defaults to skipping tests)."
     ),
+    no_tests: bool = typer.Option(
+        False, "--no-tests", help="Skip running tests regardless of config settings."
+    ),
 ) -> None:
     """
     Run the full preflight gate inside the project venv:
@@ -306,9 +309,12 @@ def check(
 
     files: list[str] = []
     if changed:
-        files = _existing_files(
-            root, _filter_py(_staged_files(root) if staged else _changed_files(root))
-        )
+        changed_candidates = _staged_files(root) if staged else _changed_files(root)
+        files = _existing_files(root, _filter_py(changed_candidates))
+        if not changed_candidates and _run_git(root, ["rev-parse", "--is-inside-work-tree"]) is None:
+            typer.echo(
+                "Warning: unable to read git state; --changed mode found no file targets."
+            )
 
     # 1) Format / lint
     if cfg.formatter == "ruff":
@@ -373,7 +379,7 @@ def check(
             raise typer.Exit(code=2)
 
     # 3) Tests + coverage
-    if cfg.run_tests and not fast:
+    if cfg.run_tests and not fast and not no_tests:
         cov_args = [
             "--cov=.",
             "--cov-report=term-missing",
@@ -384,6 +390,8 @@ def check(
         code = run_module(venv_dir, "pytest", [*cov_args], cwd=root)
         if code != 0:
             raise typer.Exit(code=code)
+    elif no_tests:
+        typer.echo("Skipping tests (--no-tests).")
 
     typer.echo("✅ devr check passed")
 

@@ -411,6 +411,25 @@ def test_check_changed_runs_pytest_when_no_python_files(
     ]
 
 
+def test_check_no_tests_skips_pytest(monkeypatch, tmp_path: Path) -> None:
+    venv_path = (tmp_path / ".venv").resolve()
+    calls: list[tuple[str, list[str]]] = []
+
+    monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
+    monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(run_tests=True))
+    monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
+    monkeypatch.setattr(
+        "devr.cli.run_module",
+        lambda _venv, module, args, **_kwargs: calls.append((module, args)) or 0,
+    )
+
+    result = runner.invoke(app, ["check", "--no-tests"])
+
+    assert result.exit_code == 0
+    assert ("pytest", ["--cov=.", "--cov-branch", "--cov-report=term-missing", "--cov-fail-under=85"]) not in calls
+    assert "Skipping tests (--no-tests)." in result.output
+
+
 def test_check_changed_scopes_typecheck_targets(monkeypatch, tmp_path: Path) -> None:
     venv_path = (tmp_path / ".venv").resolve()
     calls: list[tuple[str, list[str]]] = []
@@ -822,3 +841,24 @@ def test_changed_files_returns_empty_on_git_timeout(
     from devr.cli import _changed_files
 
     assert _changed_files(tmp_path) == []
+
+
+def test_check_changed_warns_when_git_state_unavailable(
+    monkeypatch, tmp_path: Path
+) -> None:
+    venv_path = (tmp_path / ".venv").resolve()
+
+    monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
+    monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(run_tests=False))
+    monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
+    monkeypatch.setattr("devr.cli._changed_files", lambda _: [])
+    monkeypatch.setattr(
+        "devr.cli._run_git",
+        lambda _root, _args: None,
+    )
+    monkeypatch.setattr("devr.cli.run_module", lambda *_args, **_kwargs: 0)
+
+    result = runner.invoke(app, ["check", "--changed", "--fast"])
+
+    assert result.exit_code == 0
+    assert "Warning: unable to read git state; --changed mode found no file targets." in result.output
