@@ -257,9 +257,15 @@ def _existing_files(root: Path, files: list[str]) -> list[str]:
 
 def _run_or_exit(venv_dir: Path, module: str, args: list[str], root: Path) -> None:
     """Run a module command and exit with its code when the command fails."""
-    code = run_module(venv_dir, module, args, cwd=root)
+    code = _run_with_summary(venv_dir, module, args, root)
     if code != 0:
         raise typer.Exit(code=code)
+
+
+def _run_with_summary(venv_dir: Path, module: str, args: list[str], root: Path) -> int:
+    """Print a short command summary and execute the module."""
+    typer.echo(f"Running: {module} {' '.join(args)}")
+    return run_module(venv_dir, module, args, cwd=root)
 
 
 def _typecheck_targets(changed: bool, files: list[str]) -> list[str]:
@@ -355,10 +361,16 @@ def check(
 
     # 1) Format / lint
     if cfg.formatter == "ruff":
+        typer.echo("Stage: lint + format")
         if fix:
             fix_target = files if changed else ["."]
             if fix_target:
-                _run_or_exit(venv_dir, "ruff", ["check", "--fix", *fix_target], root)
+                _run_or_exit(
+                    venv_dir,
+                    "ruff",
+                    ["check", "--fix", *fix_target],
+                    root,
+                )
                 _run_or_exit(venv_dir, "ruff", ["format", *fix_target], root)
             else:
                 typer.echo("No changed Python files detected; skipping lint/format.")
@@ -366,28 +378,42 @@ def check(
             # Lint (optionally scoped)
             lint_target = files if changed else ["."]
             if lint_target:
-                code = run_module(venv_dir, "ruff", ["check", *lint_target], cwd=root)
+                code = _run_with_summary(
+                    venv_dir,
+                    "ruff",
+                    ["check", *lint_target],
+                    root,
+                )
                 if code != 0:
                     raise typer.Exit(code=code)
                 # Format check
-                code = run_module(
-                    venv_dir, "ruff", ["format", "--check", *lint_target], cwd=root
+                code = _run_with_summary(
+                    venv_dir,
+                    "ruff",
+                    ["format", "--check", *lint_target],
+                    root,
                 )
                 if code != 0:
                     raise typer.Exit(code=code)
             else:
                 typer.echo("No changed Python files detected; skipping lint/format.")
     elif cfg.formatter == "black":
+        typer.echo("Stage: lint + format")
         # Keep ruff lint, but black for formatting
         lint_target = files if changed else ["."]
         if lint_target:
-            code = run_module(venv_dir, "ruff", ["check", *lint_target], cwd=root)
+            code = _run_with_summary(venv_dir, "ruff", ["check", *lint_target], root)
             if code != 0:
                 raise typer.Exit(code=code)
             black_args = ["-q"]
             if not fix:
                 black_args.append("--check")
-            code = run_module(venv_dir, "black", [*black_args, *lint_target], cwd=root)
+            code = _run_with_summary(
+                venv_dir,
+                "black",
+                [*black_args, *lint_target],
+                root,
+            )
             if code != 0:
                 raise typer.Exit(code=code)
         else:
@@ -401,12 +427,13 @@ def check(
     if not typecheck_target:
         typer.echo("No changed Python files detected; skipping type checks.")
     else:
+        typer.echo("Stage: type checking")
         if cfg.typechecker == "mypy":
-            code = run_module(venv_dir, "mypy", typecheck_target, cwd=root)
+            code = _run_with_summary(venv_dir, "mypy", typecheck_target, root)
             if code != 0:
                 raise typer.Exit(code=code)
         elif cfg.typechecker == "pyright":
-            code = run_module(venv_dir, "pyright", typecheck_target, cwd=root)
+            code = _run_with_summary(venv_dir, "pyright", typecheck_target, root)
             if code != 0:
                 raise typer.Exit(code=code)
         else:
@@ -417,6 +444,7 @@ def check(
 
     # 3) Tests + coverage
     if cfg.run_tests and not fast and not no_tests:
+        typer.echo("Stage: tests")
         cov_args = [
             "--cov=.",
             "--cov-report=term-missing",
@@ -424,7 +452,7 @@ def check(
         ]
         if cfg.coverage_branch:
             cov_args.insert(1, "--cov-branch")
-        code = run_module(venv_dir, "pytest", [*cov_args], cwd=root)
+        code = _run_with_summary(venv_dir, "pytest", [*cov_args], root)
         if code != 0:
             raise typer.Exit(code=code)
     elif no_tests:
