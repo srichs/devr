@@ -44,6 +44,20 @@ def test_check_prints_selected_venv(monkeypatch, tmp_path: Path) -> None:
     assert f"Using venv: {venv_path}" in result.output
 
 
+def test_check_warns_when_staged_used_without_changed(monkeypatch, tmp_path: Path) -> None:
+    venv_path = (tmp_path / ".venv").resolve()
+
+    monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
+    monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(run_tests=False))
+    monkeypatch.setattr("devr.cli.find_venv", lambda *_: venv_path)
+    monkeypatch.setattr("devr.cli.run_module", lambda *_, **__: 0)
+
+    result = runner.invoke(app, ["check", "--staged", "--fast"])
+
+    assert result.exit_code == 0
+    assert "Warning: --staged has no effect without --changed." in result.output
+
+
 def test_security_runs_pip_audit_and_bandit(monkeypatch, tmp_path: Path) -> None:
     venv_path = (tmp_path / ".venv").resolve()
     calls: list[tuple[str, list[str]]] = []

@@ -278,6 +278,9 @@ def check(
     root = project_root()
     cfg = load_config(root)
 
+    if staged and not changed:
+        typer.echo("Warning: --staged has no effect without --changed.")
+
     venv_dir = find_venv(root, cfg.venv_path)
     if venv_dir is None:
         typer.echo("No venv found. Run: devr init")
