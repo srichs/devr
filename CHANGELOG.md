@@ -8,6 +8,11 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 ## [Unreleased]
 
 ### Added
+- _No changes yet._
+
+## [0.1.0] - 2026-02-17
+
+### Added
 - Added `devr doctor` for environment diagnostics and setup troubleshooting.
 
 ### Changed
@@ -17,10 +22,3 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Security
 - Added `devr security --fail-fast` to stop on the first failing security check.
-
-## [0.1.0] - YYYY-MM-DD
-
-### Added
-- Initial `devr` release with `init`, `check`, `fix`, and `security` commands.
-- Configuration via `pyproject.toml` (`[tool.devr]`).
-- Virtual-environment-aware tool execution for linting, formatting, type checks, tests, and coverage.
