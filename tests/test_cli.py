@@ -10,6 +10,7 @@ from typer.testing import CliRunner
 from click.exceptions import Exit
 
 from devr.cli import (
+    _echo_with_fallback,
     app,
     ensure_toolchain,
     install_precommit_hook,
@@ -29,6 +30,21 @@ def test_version_flag_prints_version(monkeypatch) -> None:
 
     assert result.exit_code == 0
     assert "devr 1.2.3" in result.output
+
+
+def test_echo_with_fallback_uses_plaintext_when_unicode_encoding_fails(monkeypatch) -> None:
+    output: list[str] = []
+
+    def _echo(value: str) -> None:
+        if value.startswith("✅"):
+            raise UnicodeEncodeError("charmap", value, 0, 1, "character maps to <undefined>")
+        output.append(value)
+
+    monkeypatch.setattr("devr.cli.typer.echo", _echo)
+
+    _echo_with_fallback("✅ devr check passed", "devr check passed")
+
+    assert output == ["devr check passed"]
 
 
 def test_check_prints_selected_venv(monkeypatch, tmp_path: Path) -> None:

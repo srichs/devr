@@ -20,6 +20,14 @@ app = typer.Typer(
 )
 
 
+def _echo_with_fallback(primary: str, fallback: str | None = None) -> None:
+    """Echo ``primary`` and gracefully fall back when the terminal cannot encode it."""
+    try:
+        typer.echo(primary)
+    except UnicodeEncodeError:
+        typer.echo(fallback if fallback is not None else primary.encode("ascii", "replace").decode("ascii"))
+
+
 def _devr_version() -> str:
     """Return the installed package version or a local fallback version."""
     try:
@@ -570,7 +578,7 @@ def check(
     elif fast:
         typer.echo("Skipping tests (--fast).")
 
-    typer.echo("✅ devr check passed")
+    _echo_with_fallback("✅ devr check passed", "devr check passed")
 
 
 @app.command()
@@ -594,7 +602,7 @@ def fix() -> None:
         typer.echo(f"Unknown formatter: {cfg.formatter}")
         raise typer.Exit(code=2)
 
-    typer.echo("✅ devr fix complete")
+    _echo_with_fallback("✅ devr fix complete", "devr fix complete")
 
 
 @app.command()
@@ -640,7 +648,7 @@ def security(
         typer.echo(f"Security checks failed: {', '.join(failed_checks)}")
         raise typer.Exit(code=1)
 
-    typer.echo("✅ devr security passed")
+    _echo_with_fallback("✅ devr security passed", "devr security passed")
 
 
 @app.command()
