@@ -3,15 +3,6 @@
 This review was refreshed after the latest completed work and focuses on **new** reliability, UX, and maintainability opportunities for `devr`.
 
 
-## 0.1.0 release additions to prioritize
-
-1. **Run package artifact smoke tests as part of release steps.**
-   - Build the wheel/sdist and verify the installed artifact can execute `devr --version` and `python -m devr --version`.
-
-2. **Reconcile changelog and version state before tagging.**
-   - `pyproject.toml` already says `0.1.0`, while `CHANGELOG.md` still has unreleased entries that read as already-shipped features.
-   - Move completed items into the final `0.1.0` section (or bump target version if intentionally post-0.1.0 work).
-
 ## High-impact improvements
 
 1. **Add machine-readable output modes (`--json`) for `check`, `security`, and `doctor`.**
