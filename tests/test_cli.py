@@ -2,6 +2,7 @@
 
 import os
 import subprocess
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -26,7 +27,7 @@ runner = CliRunner()
 
 def test_module_entrypoint_supports_version_flag() -> None:
     proc = subprocess.run(
-        ["python", "-m", "devr", "--version"],
+        [sys.executable, "-m", "devr", "--version"],
         cwd=str(Path(__file__).resolve().parents[1]),
         capture_output=True,
         text=True,
