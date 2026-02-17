@@ -7,13 +7,11 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
-### Added
-- Added `python -m devr.release_preflight` to run release artifact smoke tests and validate changelog/version consistency before tagging.
-
 ## [0.1.0] - 2026-02-17
 
 ### Added
 - Added `devr doctor` for environment diagnostics and setup troubleshooting.
+- Added `python -m devr.release_preflight` to run release artifact smoke tests and validate changelog/version consistency before tagging.
 
 ### Changed
 - Improved `devr check` diagnostics with explicit stage headers and command summaries.
