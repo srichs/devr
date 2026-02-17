@@ -113,6 +113,26 @@ jobs:
       - name: Run pytest
         run: pytest
 
+  test-py314:
+    name: Test (pytest on Python 3.14)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          allow-prereleases: true
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -U pip
+          pip install -e .[dev]
+
+      - name: Run pytest
+        run: pytest
+
   windows-smoke:
     name: Windows smoke (install + entrypoint)
     runs-on: windows-latest
