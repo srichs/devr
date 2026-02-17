@@ -34,8 +34,9 @@ This review focuses on reliability, UX, and maintainability for `devr`.
    - Added a `devr doctor` command that reports project root, active Python executable, configured and resolved venv paths, selected venv source, and git repository detection.
    - Includes a helpful setup hint when no virtual environment can be resolved.
 
-8. **Add shell-completion support toggle in docs.**
-   - CLI currently disables completion; if intentionally off, document why. If not, consider enabling Typer completion install instructions.
+8. **✅ Add shell-completion support toggle in docs.**
+   - README now includes a dedicated shell-completion note documenting that Typer completion is intentionally disabled (`add_completion=False`) and why.
+   - The note also captures an explicit future path: enable completion once cross-shell install guidance is documented and validated.
 
 9. **Add changelog automation guidance.**
    - Introduce `CHANGELOG.md` and release checklist to streamline maintenance and increase contributor confidence.

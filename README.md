@@ -68,6 +68,17 @@ devr check
 - `devr security [--fail-fast]`
 - `devr doctor`
 
+### Shell completion
+
+`devr` currently ships with Typer shell completion disabled (`add_completion=False`).
+This is intentional for now to keep startup behavior predictable in minimal
+environments and avoid implying completion-install support that is not yet
+documented or validated across shells.
+
+If you need completion today, use your shell's native completion wrappers or
+aliasing as a local workaround. A future release can enable Typer completion
+installation once cross-shell setup guidance is documented and tested.
+
 ### Notes
 
 - `--changed --staged` scopes lint/format checks to staged Python files.
