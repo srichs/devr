@@ -5,13 +5,10 @@ This review was refreshed after the latest completed work and focuses on **new**
 
 ## 0.1.0 release additions to prioritize
 
-1. **Add `python -m devr` module entrypoint support (done in this branch).**
-   - This gives users a reliable fallback invocation path and improves post-install smoke testing.
-
-2. **Run package artifact smoke tests as part of release steps.**
+1. **Run package artifact smoke tests as part of release steps.**
    - Build the wheel/sdist and verify the installed artifact can execute `devr --version` and `python -m devr --version`.
 
-3. **Reconcile changelog and version state before tagging.**
+2. **Reconcile changelog and version state before tagging.**
    - `pyproject.toml` already says `0.1.0`, while `CHANGELOG.md` still has unreleased entries that read as already-shipped features.
    - Move completed items into the final `0.1.0` section (or bump target version if intentionally post-0.1.0 work).
 
