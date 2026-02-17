@@ -154,6 +154,30 @@ jobs:
           python -c "import devr; import devr.cli; print('OK')"
           devr --help
 
+  package-smoke:
+    name: Package smoke (build + wheel install)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Build package artifacts
+        run: |
+          python -m pip install -U pip build
+          python -m build
+
+      - name: Install wheel artifact
+        run: python -m pip install --force-reinstall dist/*.whl
+
+      - name: Smoke test installed artifact entrypoints
+        run: |
+          devr --version
+          python -m devr --version
+
   docs:
     name: Docs build (sphinx)
     runs-on: ubuntu-latest
