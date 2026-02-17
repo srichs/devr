@@ -127,10 +127,9 @@ Use this checklist when cutting a release:
    - Move completed entries from `Unreleased` into a new version section.
    - Add release date (`YYYY-MM-DD`) and keep entries grouped by change type.
 3. Bump version in `pyproject.toml` under `[project].version`.
-4. Build and smoke-test the package artifacts:
-   - `python -m build`
-   - `python -m pip install --force-reinstall dist/*.whl`
-   - `python -m devr --version`
+4. Run release preflight checks (artifact smoke tests + changelog/version consistency):
+   - `python -m devr.release_preflight`
+   - This builds both wheel and sdist artifacts, installs each in an isolated venv, and verifies both `devr --version` and `python -m devr --version`.
 5. Commit release metadata (`CHANGELOG.md`, version bump, and any final docs updates).
 6. Tag the release (for example, `vX.Y.Z`) and push branch + tag.
 7. Publish to PyPI using your standard release workflow.
