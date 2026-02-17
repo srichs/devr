@@ -209,6 +209,7 @@ def test_doctor_reports_detected_venv(monkeypatch, tmp_path: Path) -> None:
 def test_doctor_reports_missing_venv_with_hint(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr("devr.cli.project_root", lambda: tmp_path)
     monkeypatch.setattr("devr.cli.load_config", lambda _: DevrConfig(venv_path=".venv"))
+    monkeypatch.setattr("devr.cli.is_inside_venv", lambda: False)
     monkeypatch.setattr("devr.cli._run_git", lambda *_args, **_kwargs: None)
 
     result = runner.invoke(app, ["doctor"])
