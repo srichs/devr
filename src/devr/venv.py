@@ -15,9 +15,15 @@ def is_inside_venv() -> bool:
 
 def venv_python(venv_dir: Path) -> Path:
     """Return the platform-specific Python executable path for a virtual environment."""
-    if os.name == "nt":
-        return venv_dir / "Scripts" / "python.exe"
-    return venv_dir / "bin" / "python"
+    windows_python = venv_dir / "Scripts" / "python.exe"
+    posix_python = venv_dir / "bin" / "python"
+
+    preferred = windows_python if os.name == "nt" else posix_python
+    alternate = posix_python if os.name == "nt" else windows_python
+
+    if preferred.exists() or not alternate.exists():
+        return preferred
+    return alternate
 
 
 def find_venv(project_root: Path, configured: str | None) -> Path | None:
@@ -54,7 +60,7 @@ def create_venv(
 def run_py(venv_dir: Path, args: list[str], cwd: Path) -> int:
     """Run Python inside ``venv_dir`` with ``args`` from ``cwd`` and return its exit code."""
     py = venv_python(venv_dir)
-    return subprocess.call([str(py), *args], cwd=str(cwd))
+    return subprocess.call([py.as_posix(), *args], cwd=str(cwd))
 
 
 def run_module(venv_dir: Path, module: str, args: list[str], cwd: Path) -> int:
