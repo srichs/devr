@@ -38,8 +38,9 @@ This review focuses on reliability, UX, and maintainability for `devr`.
    - README now includes a dedicated shell-completion note documenting that Typer completion is intentionally disabled (`add_completion=False`) and why.
    - The note also captures an explicit future path: enable completion once cross-shell install guidance is documented and validated.
 
-9. **Add changelog automation guidance.**
-   - Introduce `CHANGELOG.md` and release checklist to streamline maintenance and increase contributor confidence.
+9. **✅ Add changelog automation guidance.**
+   - Added `CHANGELOG.md` with Keep a Changelog/SemVer structure and an `Unreleased` section.
+   - README now includes a practical release checklist covering validation, changelog updates, version bumping, tagging, and publish flow.
 
 ## Strengths observed
 

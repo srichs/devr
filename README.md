@@ -116,6 +116,21 @@ When `devr` needs to run tooling, it resolves the venv in this order:
 This is the same resolution order used by `devr init`, `devr check`, `devr fix`, and
 `devr security`.
 
+
+## Release checklist
+
+Use this checklist when cutting a release:
+
+1. Verify local quality gates pass (`devr check` and `devr security`).
+2. Update `CHANGELOG.md`:
+   - Move completed entries from `Unreleased` into a new version section.
+   - Add release date (`YYYY-MM-DD`) and keep entries grouped by change type.
+3. Bump version in `pyproject.toml` under `[project].version`.
+4. Commit release metadata (`CHANGELOG.md`, version bump, and any final docs updates).
+5. Tag the release (for example, `vX.Y.Z`) and push branch + tag.
+6. Publish to PyPI using your standard release workflow.
+7. Add a fresh `Unreleased` section to `CHANGELOG.md` for subsequent work.
+
 ## Default toolchain
 
 `devr init` installs:
