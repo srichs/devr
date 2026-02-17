@@ -25,7 +25,11 @@ def _echo_with_fallback(primary: str, fallback: str | None = None) -> None:
     try:
         typer.echo(primary)
     except UnicodeEncodeError:
-        typer.echo(fallback if fallback is not None else primary.encode("ascii", "replace").decode("ascii"))
+        typer.echo(
+            fallback
+            if fallback is not None
+            else primary.encode("ascii", "replace").decode("ascii")
+        )
 
 
 def _devr_version() -> str:

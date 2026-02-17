@@ -32,12 +32,16 @@ def test_version_flag_prints_version(monkeypatch) -> None:
     assert "devr 1.2.3" in result.output
 
 
-def test_echo_with_fallback_uses_plaintext_when_unicode_encoding_fails(monkeypatch) -> None:
+def test_echo_with_fallback_uses_plaintext_when_unicode_encoding_fails(
+    monkeypatch,
+) -> None:
     output: list[str] = []
 
     def _echo(value: str) -> None:
         if value.startswith("✅"):
-            raise UnicodeEncodeError("charmap", value, 0, 1, "character maps to <undefined>")
+            raise UnicodeEncodeError(
+                "charmap", value, 0, 1, "character maps to <undefined>"
+            )
         output.append(value)
 
     monkeypatch.setattr("devr.cli.typer.echo", _echo)
