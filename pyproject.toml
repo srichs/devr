@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "devr"
-version = "0.0.0"
+version = "0.1.0"
 description = "Run a full Python dev preflight (ruff format/lint, typecheck, tests, coverage) inside your project venv."
 readme = "README.md"
 requires-python = ">=3.9"
