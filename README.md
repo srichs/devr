@@ -67,6 +67,7 @@ devr check
 - `devr fix`
 - `devr security [--fail-fast]`
 - `devr doctor`
+- `python -m devr --version` (module entrypoint smoke check)
 
 ### Shell completion
 
@@ -126,10 +127,14 @@ Use this checklist when cutting a release:
    - Move completed entries from `Unreleased` into a new version section.
    - Add release date (`YYYY-MM-DD`) and keep entries grouped by change type.
 3. Bump version in `pyproject.toml` under `[project].version`.
-4. Commit release metadata (`CHANGELOG.md`, version bump, and any final docs updates).
-5. Tag the release (for example, `vX.Y.Z`) and push branch + tag.
-6. Publish to PyPI using your standard release workflow.
-7. Add a fresh `Unreleased` section to `CHANGELOG.md` for subsequent work.
+4. Build and smoke-test the package artifacts:
+   - `python -m build`
+   - `python -m pip install --force-reinstall dist/*.whl`
+   - `python -m devr --version`
+5. Commit release metadata (`CHANGELOG.md`, version bump, and any final docs updates).
+6. Tag the release (for example, `vX.Y.Z`) and push branch + tag.
+7. Publish to PyPI using your standard release workflow.
+8. Add a fresh `Unreleased` section to `CHANGELOG.md` for subsequent work.
 
 ## Default toolchain
 

@@ -1,5 +1,6 @@
 """CLI behavior tests for devr commands."""
 
+import os
 import subprocess
 from pathlib import Path
 from types import SimpleNamespace
@@ -21,6 +22,20 @@ from devr.config import DevrConfig
 from devr.templates import PRECOMMIT_LOCAL_HOOK_YAML
 
 runner = CliRunner()
+
+
+def test_module_entrypoint_supports_version_flag() -> None:
+    proc = subprocess.run(
+        ["python", "-m", "devr", "--version"],
+        cwd=str(Path(__file__).resolve().parents[1]),
+        capture_output=True,
+        text=True,
+        check=False,
+        env={**os.environ, "PYTHONPATH": "src"},
+    )
+
+    assert proc.returncode == 0
+    assert proc.stdout.startswith("devr ")
 
 
 def test_version_flag_prints_version(monkeypatch) -> None:
