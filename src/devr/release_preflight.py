@@ -46,6 +46,7 @@ def changelog_versions(changelog_path: Path) -> list[str]:
 
 def validate_changelog(changelog_path: Path, version: str) -> None:
     """Validate changelog has expected release structure for ``version``."""
+    changelog_text = changelog_path.read_text(encoding="utf-8")
     versions = changelog_versions(changelog_path)
     if not versions or versions[0] != "Unreleased":
         raise ReleasePreflightError(
@@ -55,6 +56,17 @@ def validate_changelog(changelog_path: Path, version: str) -> None:
         raise ReleasePreflightError(
             f"CHANGELOG.md is missing a section for version {version!r}. "
             "Move completed entries from Unreleased into that release section before tagging."
+        )
+
+    unreleased_match = re.search(
+        r"^## \[Unreleased\]\s*(.*?)(?=^## \[|\Z)",
+        changelog_text,
+        flags=re.MULTILINE | re.DOTALL,
+    )
+    if unreleased_match and unreleased_match.group(1).strip():
+        raise ReleasePreflightError(
+            "CHANGELOG.md has unreleased entries. Move completed entries from "
+            "'Unreleased' into the current version section before tagging."
         )
 
 

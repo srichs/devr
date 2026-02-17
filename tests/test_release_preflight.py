@@ -35,6 +35,17 @@ def test_validate_changelog_requires_current_version_section(tmp_path: Path) -> 
         validate_changelog(changelog, "0.1.0")
 
 
+def test_validate_changelog_requires_empty_unreleased_section(tmp_path: Path) -> None:
+    changelog = tmp_path / "CHANGELOG.md"
+    changelog.write_text(
+        "## [Unreleased]\n\n### Added\n- pending item\n\n## [0.1.0] - 2026-01-01\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ReleasePreflightError, match="unreleased entries"):
+        validate_changelog(changelog, "0.1.0")
+
+
 def test_changelog_versions_extracts_headings(tmp_path: Path) -> None:
     changelog = tmp_path / "CHANGELOG.md"
     changelog.write_text(
