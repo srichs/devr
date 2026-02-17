@@ -27,7 +27,9 @@ def project_version(pyproject_path: Path) -> str:
     data = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
     version = data.get("project", {}).get("version")
     if not isinstance(version, str) or not version.strip():
-        raise ReleasePreflightError("Could not determine [project].version from pyproject.toml")
+        raise ReleasePreflightError(
+            "Could not determine [project].version from pyproject.toml"
+        )
     return version.strip()
 
 
@@ -46,7 +48,9 @@ def validate_changelog(changelog_path: Path, version: str) -> None:
     """Validate changelog has expected release structure for ``version``."""
     versions = changelog_versions(changelog_path)
     if not versions or versions[0] != "Unreleased":
-        raise ReleasePreflightError("CHANGELOG.md must have '## [Unreleased]' as the first section")
+        raise ReleasePreflightError(
+            "CHANGELOG.md must have '## [Unreleased]' as the first section"
+        )
     if version not in versions:
         raise ReleasePreflightError(
             f"CHANGELOG.md is missing a section for version {version!r}. "
@@ -59,7 +63,9 @@ def run_checked(cmd: list[str], cwd: Path) -> None:
     print(f"$ {' '.join(cmd)}")
     completed = subprocess.run(cmd, cwd=cwd, check=False)
     if completed.returncode != 0:
-        raise ReleasePreflightError(f"Command failed with exit code {completed.returncode}: {' '.join(cmd)}")
+        raise ReleasePreflightError(
+            f"Command failed with exit code {completed.returncode}: {' '.join(cmd)}"
+        )
 
 
 def artifact_path(dist_dir: Path, suffix: str) -> Path:
@@ -74,14 +80,30 @@ def smoke_test_artifact(artifact: Path, repo_root: Path) -> None:
     """Install an artifact in a temporary venv and run version entrypoint checks."""
     with tempfile.TemporaryDirectory(prefix="devr-release-") as tmp:
         venv_dir = Path(tmp) / ".venv"
-        python_bin = venv_dir / ("Scripts/python.exe" if sys.platform.startswith("win") else "bin/python")
+        python_bin = venv_dir / (
+            "Scripts/python.exe" if sys.platform.startswith("win") else "bin/python"
+        )
         run_checked([sys.executable, "-m", "venv", str(venv_dir)], cwd=repo_root)
-        run_checked([str(python_bin), "-m", "pip", "install", "--upgrade", "pip"], cwd=repo_root)
-        run_checked([str(python_bin), "-m", "pip", "install", "--force-reinstall", str(artifact)], cwd=repo_root)
+        run_checked(
+            [str(python_bin), "-m", "pip", "install", "--upgrade", "pip"], cwd=repo_root
+        )
+        run_checked(
+            [
+                str(python_bin),
+                "-m",
+                "pip",
+                "install",
+                "--force-reinstall",
+                str(artifact),
+            ],
+            cwd=repo_root,
+        )
         run_checked([str(python_bin), "-m", "devr", "--version"], cwd=repo_root)
         run_checked([str(python_bin), "-m", "pip", "show", "devr"], cwd=repo_root)
         scripts_dir = python_bin.parent
-        devr_bin = scripts_dir / ("devr.exe" if sys.platform.startswith("win") else "devr")
+        devr_bin = scripts_dir / (
+            "devr.exe" if sys.platform.startswith("win") else "devr"
+        )
         run_checked([str(devr_bin), "--version"], cwd=repo_root)
 
 

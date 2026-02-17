@@ -27,7 +27,9 @@ def test_validate_changelog_requires_unreleased_first(tmp_path: Path) -> None:
 
 def test_validate_changelog_requires_current_version_section(tmp_path: Path) -> None:
     changelog = tmp_path / "CHANGELOG.md"
-    changelog.write_text("## [Unreleased]\n\n## [0.0.9] - 2026-01-01\n", encoding="utf-8")
+    changelog.write_text(
+        "## [Unreleased]\n\n## [0.0.9] - 2026-01-01\n", encoding="utf-8"
+    )
 
     with pytest.raises(ReleasePreflightError, match="0.1.0"):
         validate_changelog(changelog, "0.1.0")
